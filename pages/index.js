@@ -104,7 +104,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h2 className="text-lg text-gray-900 font-medium title-font mb-2">Built for Builders</h2>
-                <p className="leading-relaxed text-base">Whether you're shipping code or sipping coffee — we got you.</p>
+                <p className="leading-relaxed text-base">Whether you are shipping code or sipping coffee — we got you.</p>
               </div>
             </div>
           </div>
