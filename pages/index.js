@@ -1,18 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Head from "next/head";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Image from "next/image";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export default function Home() {
   return (
@@ -23,7 +13,6 @@ export default function Home() {
         <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
       </Head>
 
-      <Navbar />
       <div>
         <Image width={2000} height={20} src="/home.jpg" alt="" />
       </div>
@@ -111,7 +100,6 @@ export default function Home() {
           
         </div>
       </section>
-      <Footer />
     </div>
   );
 }
