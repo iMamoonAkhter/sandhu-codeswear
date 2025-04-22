@@ -1,9 +1,8 @@
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { set } from "nprogress";
 import React from "react";
 
-const Slug = () => {
+const Slug = ({addToCart}) => {
   const router = useRouter();
   const { slug } = router.query;
   const [pin, setPin] = React.useState()
@@ -188,7 +187,8 @@ const Slug = () => {
                 <button className="flex ml-8 text-white bg-pink-500 border-0 py-2 md:px-6 px-2 focus:outline-none hover:bg-pink-600 rounded">
                   Buy Now
                 </button>
-                <button className="flex ml-4 text-white bg-pink-500 border-0 py-2 px-2 md:px-6 focus:outline-none hover:bg-pink-600 rounded">
+                <button className="flex ml-4 text-white bg-pink-500 border-0 py-2 px-2 md:px-6 focus:outline-none hover:bg-pink-600 rounded" onClick={() => addToCart(slug, 6, 600, "Tshirts", 'XL', "Red", "https://m.media-amazon.com/images/I/7183mkggQYL._AC_SX569_.jpg")}
+                >
                   Add to Cart
                 </button>
                 <button className="rounded-full w-10 h-10 bg-gray-200 p-0 border-0 inline-flex items-center justify-center text-gray-500 ml-4">

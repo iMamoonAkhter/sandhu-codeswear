@@ -1,31 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import { AiFillCloseCircle, AiOutlinePlus, AiOutlineMinus, AiOutlineShoppingCart } from 'react-icons/ai'
 import { BsFillBagCheckFill } from 'react-icons/bs'
 
-const Navbar = () => {
+const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
   const ref = useRef()
-
-  // Sample cart items data
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: 'Premium Cotton T-Shirt',
-      price: 24.99,
-      quantity: 2,
-      image: 'https://m.media-amazon.com/images/I/7183mkggQYL._AC_SX569_.jpg',
-      size: 'M'
-    },
-    {
-      id: 2,
-      name: 'Cozy Hoodie',
-      price: 49.99,
-      quantity: 1,
-      image: 'https://m.media-amazon.com/images/I/7183mkggQYL._AC_SX569_.jpg',
-      size: 'L'
-    }
-  ])
 
   const toggleCart = () => {
     if (ref.current.classList.contains("translate-x-full")) {
@@ -37,17 +17,13 @@ const Navbar = () => {
     }
   }
 
-  const clearCart = ()=>{
-    setCartItems([])
-  }
-
   return (
     <div className='flex flex-col md:flex-row justify-center md:justify-start items-center py-2 shadow-md sticky top-0 bg-white z-50'>
-      
+
       {/* Logo */}
       <div className="logo mx-5">
-        <Link href={'/'} legacyBehavior>
-          <a><Image width={100} height={40} src="/home.jpg" alt="Logo" /></a>
+        <Link href={'/'}>
+          <Image width={100} height={40} src="/home.jpg" alt="Logo" />
         </Link>
       </div>
 
@@ -66,14 +42,14 @@ const Navbar = () => {
         <div className="relative">
           <AiOutlineShoppingCart className='text-xl md:text-2xl group-hover:text-pink-500 transition' />
           <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            {cartItems.reduce((total, item) => total + item.quantity, 0)}
+            {Object.keys(cart).reduce((total, key) => total + cart[key].qty, 0)}
           </span>
         </div>
       </div>
 
       {/* Cart Sidebar */}
       <div ref={ref} className="w-80 h-full sideCart fixed top-0 right-0 bg-white px-6 py-8 transition-transform duration-300 transform translate-x-full shadow-xl overflow-y-auto">
-        
+
         <div className="flex justify-between items-center mb-6">
           <h2 className='font-bold text-2xl'>Your Cart</h2>
           <button onClick={toggleCart} className="text-gray-500 hover:text-pink-500 transition cursor-pointer">
@@ -81,7 +57,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        {cartItems.length === 0 ? (
+        {Object.keys(cart).length === 0 ? (
           <div className="text-center py-10">
             <p className="text-gray-500">Your cart is empty</p>
             <Link href={'/'}>
@@ -93,56 +69,57 @@ const Navbar = () => {
         ) : (
           <>
             <div className="divide-y divide-gray-200">
-              {cartItems.map((item) => (
-                <div key={item.id} className="py-4 flex">
-                  <div className="w-1/3 flex-shrink-0">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      width={80}
-                      height={80}
-                      className="rounded object-cover"
-                    />
-                  </div>
-                  <div className="w-2/3 pl-4">
-                    <h3 className="font-medium text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-500">Size: {item.size}</p>
-                    <p className="text-pink-500 font-bold mt-1">${item.price.toFixed(2)}</p>
+              {Object.keys(cart).map((itemCode) => {
+                const item = cart[itemCode];
+                return (
+                  <div key={itemCode} className="py-4 flex">
+                    <div className="w-1/3 flex-shrink-0">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={80}
+                        height={80}
+                        className="rounded object-cover"
+                      />
+                    </div>
+                    <div className="w-2/3 pl-4">
+                      <h3 className="font-medium text-gray-900">{item.name}</h3>
+                      <p className="text-sm text-gray-500">Size: {item.size}</p>
+                      <p className="text-pink-500 font-bold mt-1">${item.price.toFixed(2)}</p>
 
-                    {/* Quantity Buttons */}
-                    <div className="flex items-center mt-2">
-                      <button className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer">
-                        <AiOutlineMinus className="text-sm" />
-                      </button>
-                      <span className="mx-2 text-gray-700">{item.quantity}</span>
-                      <button className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer">
-                        <AiOutlinePlus className="text-sm" />
-                      </button>
+                      {/* Quantity Buttons */}
+                      <div className="flex items-center mt-2">
+                        <button onClick={() => removeFromCart(itemCode, 1, item.price, item.name, item.size, item.variant, item.image)} className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer">
+                          <AiOutlineMinus className="text-sm" />
+                        </button>
+                        <span className="mx-2 text-gray-700">{item.qty}</span>
+                        <button onClick={() => addToCart(itemCode, 1, item.price, item.name, item.size, item.variant, item.image)} className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer">
+                          <AiOutlinePlus className="text-sm" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* Subtotal & Actions */}
             <div className="border-t border-gray-200 mt-6 pt-4">
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="font-bold">
-                  ${cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
-                </span>
+                <span className="font-bold">${subTotal.toFixed(2)}</span>
               </div>
 
               {/* Checkout Button */}
-              <button className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition mt-4 flex items-center justify-center gap-2 cursor-pointer">
+              <Link href={'/checkout'}><button className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition mt-4 flex items-center justify-center gap-2 cursor-pointer">
                 <BsFillBagCheckFill className="text-lg" />
                 Checkout
-              </button>
+              </button></Link>
 
-              {/* Continue Shopping Button */}
-                <button onClick={clearCart} className="w-full border border-pink-500 text-pink-500 py-2 rounded hover:bg-pink-50 transition mt-2 cursor-pointer">
-                  Clear Cart
-                </button>
+              {/* Clear Cart Button */}
+              <button onClick={clearCart} className="w-full border border-pink-500 text-pink-500 py-2 rounded hover:bg-pink-50 transition mt-2 cursor-pointer">
+                Clear Cart
+              </button>
             </div>
           </>
         )}
