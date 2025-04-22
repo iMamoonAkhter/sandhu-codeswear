@@ -49,5 +49,6 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+mongoose.models = {}; // Clear the models to avoid OverwriteModelError
 
   export const User = mongoose.model("User", userSchema);

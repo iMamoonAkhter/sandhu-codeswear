@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 const ProductSchema = new mongoose.Schema({
     title: { type: String, required: true },         // "The Catcher in the Rye"
     slug: { type: String, required: true, unique: true }, // Unique identifier in URL
@@ -9,5 +10,5 @@ const ProductSchema = new mongoose.Schema({
     price: { type: Number, required: true },         // e.g., 58
     availableQty: { type: Number, required: true },  // Stock quantity
   }, { timestamps: true });
-
+mongoose.models = {}; // Clear the models to avoid OverwriteModelError
   export const Product = mongoose.model("Product", ProductSchema);

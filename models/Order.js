@@ -32,5 +32,6 @@ const OrderSchema = new Schema({
     },
     
 }, {timestamps: true});
+mongoose.models = {}; // Clear the models to avoid OverwriteModelError
 
 export const Order = mongoose.model("Order", OrderSchema);
