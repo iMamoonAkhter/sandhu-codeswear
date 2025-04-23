@@ -45,33 +45,49 @@ export default function App({ Component, pageProps }) {
     }
     setSubTotal(subt);
   }
-  const addToCart = (itemCode, qty, price, name, size, variant, image) => {
-    let newCart = cart;
-    if(itemCode in newCart) {
-      newCart[itemCode].qty += 1;
-    }else{
-      newCart[itemCode] = { qty: 1, price: price, name: name, size: size, variant: variant, image: image } 
+  const addToCart = (slug, qty, price, name, category, size, variant, image) => {
+    const itemCode = `${slug}~~${size}~~${variant}`;
+    let newCart = { ...cart };
+  
+    if (itemCode in newCart) {
+      newCart[itemCode].qty += qty;
+    } else {
+      newCart[itemCode] = {
+        slug,
+        qty,
+        price,
+        name,
+        category,
+        size,
+        variant,
+        image,
+      };
     }
+  
     setCart(newCart);
     saveCart(newCart);
-  }
+  };
+  
+  
+  
 
   const clearCart = ()=>{
     setCart({});
     saveCart({});
   }
 
-  const removeFromCart = (itemCode, qty, price, name, size, variant, image) => {
-    let newCart = cart;
-    if(itemCode in cart) {
+  const removeFromCart = (itemCode, qty) => {
+    let newCart = { ...cart };
+    if (itemCode in newCart) {
       newCart[itemCode].qty -= qty;
-    }
-    if(newCart[itemCode]["qty"] <= 0 ){
-      delete newCart[itemCode];
+      if (newCart[itemCode].qty <= 0) {
+        delete newCart[itemCode];
+      }
     }
     setCart(newCart);
     saveCart(newCart);
-  }
+  };
+  
   return <>
     <Navbar key={subTotal} cart={cart} addToCart={addToCart} removeFromCart={removeFromCart} clearCart={clearCart} subTotal={subTotal}  />
     <Component cart={cart} addToCart={addToCart} removeFromCart={removeFromCart} clearCart={clearCart} subTotal={subTotal} {...pageProps} />

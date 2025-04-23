@@ -105,6 +105,7 @@ const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
             <div className="divide-y divide-gray-200">
               {Object.keys(cart).map((itemCode) => {
                 const item = cart[itemCode];
+                console.log(item);
                 return (
                   <div key={itemCode} className="py-4 flex">
                     <div className="w-1/3 flex-shrink-0">
@@ -119,6 +120,7 @@ const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
                     <div className="w-2/3 pl-4">
                       <h3 className="font-medium text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-500">Size: {item.size}</p>
+                      <p className="text-sm text-gray-500">Color: {item.variant}</p>
                       <p className="text-pink-500 font-bold mt-1">
                         ${item.price.toFixed(2)}
                       </p>
@@ -126,38 +128,34 @@ const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
                       {/* Quantity Buttons */}
                       <div className="flex items-center mt-2">
                         <button
-                          onClick={() =>
-                            removeFromCart(
-                              itemCode,
-                              1,
-                              item.price,
-                              item.name,
-                              item.size,
-                              item.variant,
-                              item.image
-                            )
-                          }
+                           onClick={() => removeFromCart(itemCode, 1)}
                           className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
                         >
                           <AiOutlineMinus className="text-sm" />
                         </button>
                         <span className="mx-2 text-gray-700">{item.qty}</span>
                         <button
-                          onClick={() =>
-                            addToCart(
-                              itemCode,
-                              1,
-                              item.price,
-                              item.name,
-                              item.size,
-                              item.variant,
-                              item.image
-                            )
-                          }
-                          className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
-                        >
-                          <AiOutlinePlus className="text-sm" />
-                        </button>
+  onClick={() => {
+    const [slug, size, variant] = itemCode.split("~~");
+    addToCart(
+      slug,
+      1,
+      item.price,
+      item.name,
+      item.category,
+      size,
+      variant,
+      item.image
+    );
+  }}
+  className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
+>
+  <AiOutlinePlus className="text-sm" />
+</button>
+
+
+
+
                       </div>
                     </div>
                   </div>
