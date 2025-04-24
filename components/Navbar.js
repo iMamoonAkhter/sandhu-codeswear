@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   AiFillCloseCircle,
   AiOutlinePlus,
@@ -9,7 +9,7 @@ import {
 } from "react-icons/ai";
 import { BsFillBagCheckFill } from "react-icons/bs";
 import { MdAccountCircle } from "react-icons/md";
-const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
+const Navbar = ({ logout, user, cart, addToCart, removeFromCart, clearCart, subTotal }) => {
   const ref = useRef();
 
   const toggleCart = () => {
@@ -22,10 +22,15 @@ const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
     }
   };
 
+  const [dropdown, setDropdown] = useState(false)
+  const toggleDropdown = ()=>{
+    setDropdown(!dropdown)
+  }
+
   return (
     <div className="flex flex-col md:flex-row justify-center md:justify-start items-center py-2 shadow-md sticky top-0 bg-white z-50">
       {/* Logo */}
-      <div className="logo mx-5">
+      <div className="logo md:mr-5 mr-auto mx-5">
         <Link href={"/"}>
           <Image width={100} height={40} src="/home.jpg" alt="Logo" />
         </Link>
@@ -33,7 +38,7 @@ const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
 
       {/* Navigation Links */}
       <div className="nav">
-        <ul className="flex items-center space-x-6 font-bold md:text-md">
+        <ul className="flex items-center space-x-6 font-bold md:text-md ">
           <Link href={"/tshirts"}>
             <li className="hover:text-pink-500 transition cursor-pointer">
               Tshirts
@@ -61,7 +66,43 @@ const Navbar = ({ cart, addToCart, removeFromCart, clearCart, subTotal }) => {
       <div className="cart absolute right-0 top-4 mx-5 flex items-center gap-3">
         {/* Account Icon - Independent Hover */}
         <div className="cursor-pointer hover:text-pink-500 transition">
-          <Link href={'/login'} legacyBehavior><a><MdAccountCircle className="text-xl md:text-2xl" /></a></Link>
+        <div 
+  className="relative cursor-pointer"
+  onMouseEnter={() => setDropdown(true)}
+  onMouseLeave={() => setDropdown(false)}
+>
+  {user.value && <MdAccountCircle className="text-xl md:text-2xl hover:text-pink-500 transition" />}
+
+  {dropdown && (
+    <div className="absolute right-0 top-6 w-40 bg-white shadow-md rounded-md py-2 z-50">
+      <ul className="text-sm text-gray-700">
+      <Link href="/myaccount">
+        <li className="px-4 py-2 hover:bg-pink-100">
+          My Account
+        </li>
+        </Link>
+        <hr />
+        <Link href="/orders">
+        <li className="px-4 py-2 hover:bg-pink-100">
+          Orders
+        </li></Link>
+        <hr />
+        <button onClick={logout}>
+        <li className="px-4 py-2 hover:bg-pink-100">
+          Logout
+        </li></button>
+
+        <hr />
+      </ul>
+    </div>
+  )}
+</div>
+
+        
+          {!user.value && <Link href={'/login'} legacyBehavior>
+          <a>
+            <button className="cursor-pointer bg-pink-600 px-2 py-2 rounded-md text-sm text-white mx-2">Login</button>  
+          </a></Link>}
         </div>
 
         {/* Cart Icon - With Cart Count Badge */}

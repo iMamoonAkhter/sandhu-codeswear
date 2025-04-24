@@ -24,7 +24,8 @@ export default function App({ Component, pageProps }) {
   const [cart, setCart] = useState({});
   const [subTotal, setSubTotal] = useState(0);
   const [buyNowItem, setBuyNowItem] = useState(null);
-
+  const [user, setUser] = useState({value: null});
+  const [key, setKey] = useState()
   useEffect(() => {
     try {
       if (localStorage.getItem('cart')) {
@@ -36,7 +37,12 @@ export default function App({ Component, pageProps }) {
       console.log(error);
       localStorage.clear();
     }
-  }, []);
+    const token = localStorage.getItem('token');
+    if(token){
+      setUser({value: token});
+      setKey(Math.random());
+    }
+  }, [router.query]);
 
   const saveCart = (myCart) => {
     localStorage.setItem('cart', JSON.stringify(myCart));
@@ -75,6 +81,13 @@ export default function App({ Component, pageProps }) {
     setCart({});
     saveCart({});
   };
+
+  const logout = ()=>{
+    localStorage.removeItem('token');
+    setKey(Math.random());
+    setUser({value: null});
+    router.push('/');
+  }
 
   const removeFromCart = (itemCode, qty) => {
     let newCart = { ...cart };
@@ -126,6 +139,9 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Navbar
+        user={user}
+        logout={logout}
+        key={key}
         cart={cart}
         addToCart={addToCart}
         removeFromCart={removeFromCart}
