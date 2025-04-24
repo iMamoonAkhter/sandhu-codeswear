@@ -1,24 +1,52 @@
 import Image from "next/image";
-import React from "react";
-
-const Slug = ({ product, addToCart }) => {
+import React, { useEffect } from "react";
+import { Bounce, ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+const Slug = ({ product, addToCart, BuyNow }) => {
   const [pin, setPin] = React.useState();
   const [service, setService] = React.useState(null);
   const [selectedColor, setSelectedColor] = React.useState(product.color[0]);
   const [selectedSize, setSelectedSize] = React.useState(product.size[0]);
-
+  useEffect(() => {
+    const fetchPinService = async () => {
+      try {
+        const pins = await fetch("http://localhost:3000/api/pincode");
+        const pinJson = await pins.json();
+        setService(pinJson.includes(parseInt(pin)));
+      } catch (error) {
+        console.error("Error fetching pincode service:", error);
+        toast.error("Zip code service unavailable at the moment.Please try again later.");
+      }
+    };
+    fetchPinService();
+  }, [pin]);
+  
   const checkServiceAbility = async () => {
-    let pins = await fetch("http://localhost:3000/api/pincode");
-    let pinJson = await pins.json();
-    setService(pinJson.includes(parseInt(pin)));
+    
+    if(service === true){
+      toast.success("Yay! This pincode is serviceable")
+    }else{
+      toast.error("Sorry! We do not deliver to this pincode yet")
+    }
   };
 
   const onChangePin = (e) => {
     setPin(e.target.value);
   };
-
+ 
   return (
     <>
+    <ToastContainer position="top-right"
+      autoClose={5000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick={false}
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="dark"
+      transition={Bounce} />
       <section className="text-gray-600 body-font overflow-hidden">
         <div className="container px-5 py-24 mx-auto">
           <div className="lg:w-4/5 mx-auto flex flex-wrap">
@@ -94,16 +122,13 @@ const Slug = ({ product, addToCart }) => {
                 <span className="title-font font-medium text-2xl text-gray-900">
                   ${product.price}
                 </span>
-                <button className="flex ml-8 text-white bg-pink-500 border-0 py-2 md:px-6 px-2 focus:outline-none hover:bg-pink-600 rounded">
+                <button className="flex ml-8 text-white bg-pink-500 border-0 py-2 md:px-6 px-2 focus:outline-none hover:bg-pink-600 rounded"  onClick={() => BuyNow(product, selectedSize, selectedColor)}>
                   Buy Now
                 </button>
                 <button
                   className="flex ml-4 text-white bg-pink-500 border-0 py-2 px-2 md:px-6 focus:outline-none hover:bg-pink-600 rounded"
                   onClick={() => {
-                    console.log("Adding to cart with:", {
-                      size: selectedSize,
-                      color: selectedColor,
-                    });
+                    
                     addToCart(
                       product.slug,
                       1,
@@ -130,23 +155,14 @@ const Slug = ({ product, addToCart }) => {
                   placeholder="Enter your Pincode"
                 />
                 <button
-                  className="text-white bg-pink-500 border-0 py-2 px-6 focus:outline-none hover:bg-pink-600 rounded"
+                  className="text-white bg-pink-500 border-0 py-2 px-6 focus:outline-none hover:bg-pink-600 rounded cursor-pointer"
                   onClick={checkServiceAbility}
                 >
                   Check
                 </button>
               </div>
 
-              {service === false && (
-                <div className="text-red-700 text-sm mt-3">
-                  Sorry! We do not deliver to this pincode yet
-                </div>
-              )}
-              {service === true && (
-                <div className="text-green-700 text-sm mt-3">
-                  Yay! This pincode is serviceable
-                </div>
-              )}
+              
             </div>
           </div>
         </div>

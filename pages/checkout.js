@@ -140,6 +140,12 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                       <div className="w-2/3 pl-4">
                         <h3 className="font-medium text-gray-900">{item.name}</h3>
                         <p className="text-sm text-gray-500">Size: {item.size}</p>
+                        <p className="text-sm text-gray-500">Color:  <button
+                      className={`border-2 ml-1 rounded-full w-4 h-4 focus:outline-none `}
+                      style={{ backgroundColor: item.variant.toLowerCase() }}
+                      
+                    ></button></p>
+                       
                         <p className="text-pink-500 font-bold mt-1">${item.price.toFixed(2)}</p>
 
                         <div className="flex items-center mt-2">

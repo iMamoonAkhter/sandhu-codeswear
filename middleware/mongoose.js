@@ -11,9 +11,8 @@ export const connectDB = (handler) => async (req, res) => {
         useUnifiedTopology: true,
       });
       isConnected = true;
-      console.log("MongoDB connected successfully");
     } catch (error) {
-      console.error("MongoDB connection error:", error);
+      
       return res.status(500).json({ error: "Database connection failed" });
     }
   }

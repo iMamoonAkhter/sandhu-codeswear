@@ -12,3 +12,4 @@ const ProductSchema = new mongoose.Schema({
   }, { timestamps: true });
 mongoose.models = {}; // Clear the models to avoid OverwriteModelError
   export const Product = mongoose.model("Product", ProductSchema);
+// export default mongoose.models.Product || mongoose.model("Product", ProductSchema);

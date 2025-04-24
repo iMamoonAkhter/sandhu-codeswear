@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: [true, 'Phone number is required'],
-      match: [/^\d{10}$/, 'Phone number must be 10 digits'], // optional tweak based on locale
+      match: [/^\d{11}$/, 'Phone number must be 11 digits'], // optional tweak based on locale
     },
     dob: {
       type: Date,
@@ -51,4 +51,6 @@ const userSchema = new mongoose.Schema(
 );
 mongoose.models = {}; // Clear the models to avoid OverwriteModelError
 
-  export const User = mongoose.model("User", userSchema);
+   export const User = mongoose.model("User", userSchema);
+
+//export default mongoose.models.User || mongoose.model("User", userSchema);
