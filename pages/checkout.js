@@ -1,8 +1,171 @@
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { AiOutlineMinus, AiOutlinePlus, AiOutlineArrowLeft } from "react-icons/ai";
 import { BsFillBagCheckFill } from "react-icons/bs";
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Slide, toast, ToastContainer } from "react-toastify";
+import { useRouter } from "next/router";
+
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+const CheckoutForm = ({ cart, subTotal, clearCart }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const router = useRouter();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setProcessing(true);
+    setError(null);
+
+    if (!stripe || !elements) {
+      toast.error('Stripe not initialized');
+      return;
+    }
+
+    try {
+      // Get the parent form element
+      const form = event.target.closest('form');
+      if (!form) {
+        throw new Error('Form not found');
+      }
+
+      // Get all form values safely
+      const formData = new FormData(form);
+      const formValues = Object.fromEntries(formData.entries());
+
+      // Validate required fields
+      const requiredFields = ['name', 'email', 'address', 'phone', 'city', 'state', 'pincode'];
+      for (const field of requiredFields) {
+        if (!formValues[field]) {
+          throw new Error(`Please fill in your ${field}`);
+        }
+      }
+
+      // Create payment intent
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: Math.round(subTotal * 100), // Convert PKR to paisa
+          currency: 'pkr',
+          metadata: {
+            cart: JSON.stringify(Object.keys(cart).map(itemCode => ({
+              id: itemCode,
+              qty: cart[itemCode].qty
+            }))),
+            customer: JSON.stringify({
+              name: formValues.name,
+              email: formValues.email,
+              phone: formValues.phone
+            })
+          }
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Payment failed');
+      }
+
+      // Confirm payment
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+          billing_details: {
+            name: formValues.name,
+            email: formValues.email,
+            address: {
+              line1: formValues.address,
+              city: formValues.city,
+              state: formValues.state,
+              postal_code: formValues.pincode,
+              country: 'PK',
+            },
+            phone: formValues.phone,
+          },
+        },
+      });
+
+      if (stripeError) {
+        throw stripeError;
+      }
+
+      if (paymentIntent.status === 'succeeded') {
+        toast.success('Payment successful! Redirecting...');
+        clearCart();
+        setTimeout(() => {
+          router.push(`/order-confirmation?id=${paymentIntent.id}`);
+        }, 1500);
+      }
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <>
+    <ToastContainer position="top-left"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick={false}
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+              transition={Slide}
+      />
+      <div className="mb-6">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#9e2146',
+              },
+            },
+          }}
+        />
+      </div>
+      
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+      
+      <button
+        type="submit"
+        form="payment-form"
+        disabled={!stripe || processing}
+        onClick={handleSubmit}
+        className="w-full bg-pink-500 text-white py-3 rounded-lg font-medium hover:bg-pink-600 transition duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {processing ? (
+          'Processing...'
+        ) : (
+          <>
+            <BsFillBagCheckFill className="mr-2" />
+            Pay PKR {subTotal.toLocaleString('en-PK')}
+          </>
+        )}
+      </button>
+    </>
+  );
+};
 
 const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
   return (
@@ -15,94 +178,100 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
 
       <h1 className="font-bold text-3xl mb-8 text-center text-gray-800">Checkout</h1>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <form id="payment-form" className="flex flex-col lg:flex-row gap-8">
         {/* Delivery Details Section */}
         <div className="lg:w-2/3 bg-white rounded-lg shadow-md p-6">
           <h2 className="font-semibold text-2xl mb-6 text-gray-700 border-b pb-2">Delivery Details</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="name" className="leading-7 text-sm text-gray-600">
-                Name
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
               </label>
               <input
                 type="text"
                 id="name"
                 name="name"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="leading-7 text-sm text-gray-600">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
                 type="email"
                 id="email"
                 name="email"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label htmlFor="address" className="leading-7 text-sm text-gray-600">
-                Address
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                Complete Address
               </label>
               <textarea
                 id="address"
                 name="address"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
-                cols={30}
-                rows={2}
+                required
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               ></textarea>
             </div>
 
             <div>
-              <label htmlFor="phone" className="leading-7 text-sm text-gray-600">
-                Phone
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
               </label>
               <input
-                type="text"
+                type="tel"
                 id="phone"
                 name="phone"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
 
             <div>
-              <label htmlFor="city" className="leading-7 text-sm text-gray-600">
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
                 City
               </label>
               <input
                 type="text"
                 id="city"
                 name="city"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
 
             <div>
-              <label htmlFor="state" className="leading-7 text-sm text-gray-600">
-                State
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+                State/Province
               </label>
               <input
                 type="text"
                 id="state"
                 name="state"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
 
             <div>
-              <label htmlFor="pincode" className="leading-7 text-sm text-gray-600">
-                Pincode
+              <label htmlFor="pincode" className="block text-sm font-medium text-gray-700 mb-1">
+                Postal Code
               </label>
               <input
                 type="text"
                 id="pincode"
                 name="pincode"
-                className="w-full bg-white rounded border border-gray-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
             </div>
           </div>
@@ -116,7 +285,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
             <div className="text-center py-10">
               <p className="text-gray-500">Your cart is empty</p>
               <Link href={'/'}>
-                <button className="mt-4 bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 transition cursor-pointer">
+                <button className="mt-4 bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600 transition cursor-pointer">
                   Continue Shopping
                 </button>
               </Link>
@@ -140,13 +309,13 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                       <div className="w-2/3 pl-4">
                         <h3 className="font-medium text-gray-900">{item.name}</h3>
                         <p className="text-sm text-gray-500">Size: {item.size}</p>
-                        <p className="text-sm text-gray-500">Color:  <button
-                      className={`border-2 ml-1 rounded-full w-4 h-4 focus:outline-none `}
-                      style={{ backgroundColor: item.variant.toLowerCase() }}
-                      
-                    ></button></p>
-                       
-                        <p className="text-pink-500 font-bold mt-1">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">
+                          Color: <span 
+                            className="inline-block w-4 h-4 rounded-full border border-gray-200 ml-1"
+                            style={{ backgroundColor: item.variant.toLowerCase() }}
+                          />
+                        </p>
+                        <p className="text-pink-500 font-bold mt-1">PKR {item.price.toLocaleString('en-PK')}</p>
 
                         <div className="flex items-center mt-2">
                           <button 
@@ -165,24 +334,24 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                         </div>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
 
               <div className="border-t border-gray-200 mt-6 pt-4">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-bold">${subTotal.toFixed(2)}</span>
+                  <span className="font-bold">PKR {subTotal.toLocaleString('en-PK')}</span>
                 </div>
 
-                <button className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition mt-4 flex items-center justify-center gap-2 cursor-pointer">
-                  <BsFillBagCheckFill className="text-lg" />
-                  Pay Amount ${subTotal.toFixed(2)}
-                </button>
+                <Elements stripe={stripePromise}>
+                  <CheckoutForm cart={cart} subTotal={subTotal} clearCart={clearCart} />
+                </Elements>
 
                 <button 
+                  type="button"
                   onClick={clearCart} 
-                  className="w-full border border-pink-500 text-pink-500 py-2 rounded hover:bg-pink-50 transition mt-2 cursor-pointer"
+                  className="w-full border border-pink-500 text-pink-500 py-2 rounded-md hover:bg-pink-50 transition mt-2 cursor-pointer"
                 >
                   Clear Cart
                 </button>
@@ -190,7 +359,7 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
             </>
           )}
         </div>
-      </div>
+      </form>
     </div>
   );
 };
