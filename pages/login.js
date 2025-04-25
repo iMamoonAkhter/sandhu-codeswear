@@ -11,7 +11,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = {email, password}
-    const response = await fetch('http://localhost:3000/api/users/login', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ const Login = () => {
       toast.success("Login Successfully")
       localStorage.setItem('token', data.token)
       setTimeout(() => {
-        router.push('http://localhost:3000/')
+        router.push(`${process.env.NEXT_PUBLIC_HOST}/`)
       }, 1000);
      }else{
       toast.error(data.message)

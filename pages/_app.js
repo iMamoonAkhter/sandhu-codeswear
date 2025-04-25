@@ -138,6 +138,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
+      {key &&
       <Navbar
         user={user}
         logout={logout}
@@ -147,7 +148,7 @@ export default function App({ Component, pageProps }) {
         removeFromCart={removeFromCart}
         clearCart={clearCart}
         subTotal={subTotal}
-      />
+      />}
       <Component
         cart={cart}
         addToCart={addToCart}

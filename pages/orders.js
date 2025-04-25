@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import React, { useEffect } from "react";
 
-const Orders = () => {
+const Orders = ({order}) => {
   const router = useRouter();
       useEffect(() => {
         if(!localStorage.getItem('token')){
@@ -76,20 +76,20 @@ const Orders = () => {
 
 export async function getServerSideProps(context) {
   
-    const product = await fetch(
-      `http://localhost:3000/api/orders/getorders`
+    const order = await fetch(
+      `${process.env.NEXT_PUBLIC_HOST}/api/orders/getorders`
     )
       .then((res) => res.json())
       .catch((err) => console.log(err));
   
-    if (!product) {
+    if (!order) {
       return {
         notFound: true,
       };
     }
   
     return {
-      props: { product: product.product },
+      props: { order: order },
     };
   }
   

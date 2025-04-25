@@ -10,8 +10,10 @@ const Slug = ({ product, addToCart, BuyNow }) => {
   useEffect(() => {
     const fetchPinService = async () => {
       try {
-        const pins = await fetch("http://localhost:3000/api/pincode");
+        console.log("URL: ", `${process.env.NEXT_PUBLIC_HOST}/api/pincode`);
+        const pins = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`);
         const pinJson = await pins.json();
+        console.log(pinJson)
         setService(pinJson.includes(parseInt(pin)));
       } catch (error) {
         console.error("Error fetching pincode service:", error);
@@ -175,7 +177,7 @@ export async function getServerSideProps(context) {
   const { category, slug } = context.params;
 
   const product = await fetch(
-    `http://localhost:3000/api/products/${category}/${slug}`
+    `${process.env.NEXT_PUBLIC_HOST}/api/products/${category}/${slug}`
   )
     .then((res) => res.json())
     .catch((err) => console.log(err));

@@ -57,7 +57,7 @@ const Stickers = ({ product }) => {
 
 export async function getServerSideProps(context) {
   const product = await fetch(
-    "http://localhost:3000/api/products/stickers"
+    `${process.env.NEXT_PUBLIC_HOST}/api/products/stickers`
   )
     .then((res) => res.json())
     .catch((err) => console.log(err));

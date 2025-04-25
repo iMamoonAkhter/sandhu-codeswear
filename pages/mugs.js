@@ -57,7 +57,7 @@ const Mugs = ({ product }) => {
 
 export async function getServerSideProps(context) {
   const product = await fetch(
-    "http://localhost:3000/api/products/mugs"
+    `${process.env.NEXT_PUBLIC_HOST}/api/products/mugs`
   )
     .then((res) => res.json())
     .catch((err) => console.log(err));
