@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Slide, toast, ToastContainer } from 'react-toastify'
 
 const Login = () => {
@@ -34,6 +34,15 @@ const Login = () => {
     setPassword('')
     
   }
+
+  useEffect(() => {
+    
+    const token = localStorage.getItem('token')
+    if(token){
+      router.push('/')
+    }
+  }, [])
+  
   return (
     <div>
       <ToastContainer position="top-left"

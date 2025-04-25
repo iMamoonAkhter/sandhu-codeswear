@@ -1,9 +1,32 @@
 import Image from 'next/image'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { BsCheckCircleFill, BsBoxSeam, BsCreditCard, BsShieldCheck } from 'react-icons/bs'
 import { FiTruck, FiClock } from 'react-icons/fi'
 
-const Order = () => {
+const OrderConfirmation = () => {
+  const [orderDate, setOrderDate] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
+
+  useEffect(() => {
+    // Set dates on client side only
+    setOrderDate(new Date().toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }))
+    
+    setDeliveryDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }))
+  }, [])
+
   const order = [
     {
       src: 'https://m.media-amazon.com/images/I/7183mkggQYL._AC_SX569_.jpg',
@@ -46,7 +69,9 @@ const Order = () => {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
           <p className="text-lg text-gray-600">Thank you for your purchase</p>
-          <p className="text-gray-500 mt-1">Order #8771233 • Placed on {new Date().toLocaleDateString()}</p>
+          {orderDate && (
+            <p className="text-gray-500 mt-1">{`Order #8771233 • Placed on ${orderDate}`}</p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -165,7 +190,7 @@ const Order = () => {
                 <h4 className="text-sm font-medium text-gray-500 mb-2">Estimated Delivery</h4>
                 <div className="flex items-center text-gray-800">
                   <FiClock className="mr-2" />
-                  {new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                  {deliveryDate}
                 </div>
               </div>
 
@@ -197,4 +222,4 @@ const Order = () => {
   )
 }
 
-export default Order
+export default OrderConfirmation

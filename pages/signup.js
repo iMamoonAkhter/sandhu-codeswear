@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import { useRouter } from 'next/router'
+import React, { useEffect } from 'react'
 import { Slide, toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -13,7 +14,15 @@ const Signup = () => {
   const [dob, setDob] = React.useState("")
   const [gender, setGender] = React.useState("")
   const [newsletter, setNewsletter] = React.useState(false)
-
+    const router = useRouter()
+  
+  useEffect(() => {
+      
+      const token = localStorage.getItem('token')
+      if(token){
+        router.push('/')
+      }
+    }, [])
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = {firstName, lastName, email, password, phone, dob, gender, newsletter}

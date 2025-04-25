@@ -1,8 +1,17 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import { useRouter } from 'next/router'
+import React, { useEffect } from 'react'
 
 const ForgotPassword = () => {
+  const router = useRouter()
+  useEffect(() => {
+      
+      const token = localStorage.getItem('token')
+      if(token){
+        router.push('/')
+      }
+    }, [])
   return (
     <div className="bg-gray-50">
       <div className="min-h-screen flex flex-col items-center justify-center py-6 px-4">
