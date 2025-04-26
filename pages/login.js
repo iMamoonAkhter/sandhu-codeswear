@@ -1,47 +1,54 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Slide, toast, ToastContainer } from 'react-toastify'
 
 const Login = () => {
-  const [email, setEmail] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const router = useRouter();
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = {email, password}
-    const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const router = useRouter()
 
-    let data = await response.json();
-    if(data.success){
-      console.log(data.success)
-      toast.success("Login Successfully")
-      localStorage.setItem('token', data.token)
-      setTimeout(() => {
-        router.push(`${process.env.NEXT_PUBLIC_HOST}/`)
-      }, 1000);
-     }else{
-      toast.error(data.message)
-    }
-    setEmail('')
-    setPassword('')
-    
-  }
-
+  // Check for existing token on component mount
   useEffect(() => {
-    
-    const token = localStorage.getItem('token')
-    if(token){
+    if (typeof window !== 'undefined' && localStorage.getItem('token')) {
       router.push('/')
     }
-  }, [])
+  }, [router])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success("Login Successful")
+        // Store token in localStorage
+        localStorage.setItem('token', data.token)
+        // Force a full page reload to initialize app state
+        if(localStorage.getItem('token')){
+          router.push('/')
+        }
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error("An error occurred during login")
+      console.error("Login error:", error)
+    } finally {
+      setEmail('')
+      setPassword('')
+    }
+  }
   
   return (
     <div>

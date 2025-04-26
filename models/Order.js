@@ -2,22 +2,50 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const OrderSchema = new Schema({
-    userId: {
+    email: {
         type: String,
         required: true,
-
+    },
+    orderId: {
+        type: String,
+        required: true,
+        unique: true,
     },
     products: [
         {
             productId: {
                 type: String,
+                required: true,
+            },
+            title: {
+                type: String,
+                required: true,
+            },
+            size: {
+                type: String,
+                required: true,
+            },
+            color: {
+                type: String,
+                required: true,
             },
             quantity: {
                 type: Number,
-                
+            },
+            img: {
+                type: String,
+                required: true,
+            },
+            amount: {
+                type: Number,
+                required: true,
             }
         }
     ],
+    paymentId: {
+        type: String,
+        default: "",
+    },
     address: {
         type: String,
         required: true,
@@ -26,14 +54,24 @@ const OrderSchema = new Schema({
         type: Number,
         required: true,
     },
+    onlinePayment: {
+        type: Boolean,
+        default: false,
+    },
     status: {
         type: String,
+        enum: ["Pending", "Order Placed", "Payment Processed", "Shipped", "Delivered", "Cancelled"],
         default: "Pending",
     },
-    
+    city: {
+        type: String,
+        required: true,
+    },
+    pincode: {
+        type: String,
+        required: true,
+    }
 }, {timestamps: true});
-mongoose.models = {}; // Clear the models to avoid OverwriteModelError
 
+mongoose.models = {};
 export const Order = mongoose.model("Order", OrderSchema);
-
-//export default mongoose.models.Order || mongoose.model("Order", OrderSchema);

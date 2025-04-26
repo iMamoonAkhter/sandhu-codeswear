@@ -1,10 +1,11 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import "@/styles/globals.css";
+import Head from "next/head";
 import { Router, useRouter } from "next/router";
-import NProgress from 'nprogress';
+import NProgress, { set } from 'nprogress';
 import 'nprogress/nprogress.css';
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // Configure NProgress
 NProgress.configure({ showSpinner: false, speed: 1000 });
@@ -24,8 +25,29 @@ export default function App({ Component, pageProps }) {
   const [cart, setCart] = useState({});
   const [subTotal, setSubTotal] = useState(0);
   const [buyNowItem, setBuyNowItem] = useState(null);
-  const [user, setUser] = useState({value: null});
-  const [key, setKey] = useState()
+  const [user, setUser] = useState({ value: null });
+  const [key, setKey] = useState();
+  const [userInfo, setUserInfo] = useState(null);
+
+  
+  const fetchUserDetails = async (token) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/getUser`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(token),
+      })
+
+      const data = await response.json();
+      setUserInfo(data.user);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      
+    }
+  }
+
   useEffect(() => {
     try {
       if (localStorage.getItem('cart')) {
@@ -34,17 +56,20 @@ export default function App({ Component, pageProps }) {
         saveCart(storedCart);
       }
     } catch (error) {
-      console.log(error);
       localStorage.clear();
     }
-    const token = localStorage.getItem('token');
-    if(token){
-      setUser({value: token});
-      setKey(Math.random());
+
+    if(localStorage.getItem('token')) {
+      setUser({ value: localStorage.getItem('token') });
+      fetchUserDetails({ token: localStorage.getItem('token') });
+    }else{
+      setUser({ value: null });
     }
+    
+    setKey(Math.random());
   }, [router.query]);
 
-  const saveCart = (myCart) => {
+  const saveCart = useCallback((myCart) => {
     localStorage.setItem('cart', JSON.stringify(myCart));
     let subt = 0;
     let keys = Object.keys(myCart);
@@ -52,58 +77,58 @@ export default function App({ Component, pageProps }) {
       subt += myCart[keys[i]].price * myCart[keys[i]].qty;
     }
     setSubTotal(subt);
-  };
+  }, []);
 
-  const addToCart = (slug, qty, price, name, category, size, variant, image) => {
+  const addToCart = useCallback((id, slug, qty, price, name, category, size, variant, image) => {
     const itemCode = `${slug}~~${size}~~${variant}`;
-    let newCart = { ...cart };
-
-    if (itemCode in newCart) {
-      newCart[itemCode].qty += qty;
-    } else {
-      newCart[itemCode] = {
-        slug,
-        qty,
-        price,
-        name,
-        category,
-        size,
-        variant,
-        image,
-      };
-    }
-
-    setCart(newCart);
-    saveCart(newCart);
-  };
+    setCart(prevCart => {
+      // Create a new cart object only if needed
+      const newCart = JSON.parse(JSON.stringify(prevCart));
+      
+      if (newCart[itemCode]) {
+        newCart[itemCode].qty += qty;
+      } else {
+        newCart[itemCode] = {
+          id, slug, qty, price, name, category, size, variant, image
+        };
+      }
+      
+      saveCart(newCart);
+      return newCart;
+    });
+  }, [saveCart]);
 
   const clearCart = () => {
     setCart({});
     saveCart({});
   };
 
-  const logout = ()=>{
+  const logout = () => {
     localStorage.removeItem('token');
     setKey(Math.random());
-    setUser({value: null});
+    setUser({ value: null });
     router.push('/');
-  }
-
-  const removeFromCart = (itemCode, qty) => {
-    let newCart = { ...cart };
-    if (itemCode in newCart) {
-      newCart[itemCode].qty -= qty;
-      if (newCart[itemCode].qty <= 0) {
-        delete newCart[itemCode];
-      }
-    }
-    setCart(newCart);
-    saveCart(newCart);
   };
 
+  const removeFromCart = useCallback((itemCode, qty) => {
+    setCart(prevCart => {
+      const newCart = JSON.parse(JSON.stringify(prevCart));
+      
+      if (newCart[itemCode]) {
+        newCart[itemCode].qty -= qty;
+        if (newCart[itemCode].qty <= 0) {
+          delete newCart[itemCode];
+        }
+      }
+      
+      saveCart(newCart);
+      return newCart;
+    });
+  }, [saveCart]);
+
   const BuyNow = (product, selectedSize, selectedColor) => {
-    // Save the item to be added later
     setBuyNowItem({
+      id: product._id,
       slug: product.slug,
       price: product.price,
       name: product.title,
@@ -113,15 +138,14 @@ export default function App({ Component, pageProps }) {
       image: product.img,
     });
 
-    // Clear the cart first
     setCart({});
     saveCart({});
   };
 
-  // Watch for cart to become empty, then add item and go to checkout
   useEffect(() => {
     if (buyNowItem && Object.keys(cart).length === 0) {
       addToCart(
+        buyNowItem.id,
         buyNowItem.slug,
         1,
         buyNowItem.price,
@@ -134,21 +158,26 @@ export default function App({ Component, pageProps }) {
       setBuyNowItem(null);
       router.push("/checkout");
     }
-  }, [cart, buyNowItem]);
+  }, [cart, buyNowItem, addToCart, router]);
 
   return (
     <>
+    <Head>
+      <script src="https://js.stripe.com/v3/" async></script>
+    </Head>
       {key &&
-      <Navbar
-        user={user}
-        logout={logout}
-        key={key}
-        cart={cart}
-        addToCart={addToCart}
-        removeFromCart={removeFromCart}
-        clearCart={clearCart}
-        subTotal={subTotal}
-      />}
+        <Navbar
+          user={user}
+          userInfo={userInfo}
+          logout={logout}
+          key={key}
+          cart={cart}
+          addToCart={addToCart}
+          removeFromCart={removeFromCart}
+          clearCart={clearCart}
+          subTotal={subTotal}
+        />
+      }
       <Component
         cart={cart}
         addToCart={addToCart}
@@ -156,6 +185,8 @@ export default function App({ Component, pageProps }) {
         clearCart={clearCart}
         subTotal={subTotal}
         BuyNow={BuyNow}
+        user={user} // Pass user token
+        userInfo={userInfo} // Pass user info to all pages
         {...pageProps}
       />
       <Footer />

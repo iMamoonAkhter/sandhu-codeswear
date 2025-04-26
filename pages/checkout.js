@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AiOutlineMinus, AiOutlinePlus, AiOutlineArrowLeft } from "react-icons/ai";
 import { BsFillBagCheckFill } from "react-icons/bs";
 import { loadStripe } from '@stripe/stripe-js';
@@ -8,57 +8,87 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { Slide, toast, ToastContainer } from "react-toastify";
 import { useRouter } from "next/router";
 
-
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm = ({ cart, subTotal, clearCart }) => {
+const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setFormValues, errorMessage, setErrorMessage }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+  useEffect(() => {
+    if(!localStorage.getItem('token')){
+      router.push('/')
+    }
+  
+  }, [router.query])
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when typing
+    if (value && errorMessage[name]) {
+      setErrorMessage(prev => ({ ...prev, [name]: false }));
+    }
+  };
+ 
+  
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setProcessing(true);
     setError(null);
-
+  
     if (!stripe || !elements) {
       toast.error('Stripe not initialized');
       return;
     }
-
+  
     try {
-      // Get the parent form element
-      const form = event.target.closest('form');
-      if (!form) {
-        throw new Error('Form not found');
-      }
-
-      // Get all form values safely
-      const formData = new FormData(form);
-      const formValues = Object.fromEntries(formData.entries());
-
       // Validate required fields
       const requiredFields = ['name', 'email', 'address', 'phone', 'city', 'state', 'pincode'];
+      let hasError = false;
+  
+      const newErrors = {};
+      requiredFields.forEach(field => { newErrors[field] = false; });
+      setErrorMessage(newErrors);
+  
       for (const field of requiredFields) {
         if (!formValues[field]) {
-          throw new Error(`Please fill in your ${field}`);
+          setErrorMessage(prev => ({ ...prev, [field]: true }));
+          hasError = true;
         }
       }
-
-      // Create payment intent
-      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/create-payment-intent`, {
+  
+      if (formValues.email && !/^\S+@\S+\.\S+$/.test(formValues.email)) {
+        setErrorMessage(prev => ({ ...prev, email: true }));
+        hasError = true;
+      }
+  
+      if (formValues.phone && !/^[0-9]{10,15}$/.test(formValues.phone)) {
+        setErrorMessage(prev => ({ ...prev, phone: true }));
+        hasError = true;
+      }
+  
+      if (hasError) {
+        setProcessing(false);
+        return;
+      }
+  
+      // Step 1: Create Payment Intent
+      toast.info('Initiating payment...', { autoClose: 2000 });
+      const paymentIntentRes = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/create-payment-intent`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: Math.round(subTotal * 100), // Convert PKR to paisa
+          amount: Math.round(subTotal * 100),
           currency: 'pkr',
           metadata: {
             cart: JSON.stringify(Object.keys(cart).map(itemCode => ({
               id: itemCode,
-              qty: cart[itemCode].qty
+              qty: cart[itemCode].qty,
+              size: cart[itemCode].size,
+              color: cart[itemCode].variant
             }))),
             customer: JSON.stringify({
               name: formValues.name,
@@ -68,14 +98,14 @@ const CheckoutForm = ({ cart, subTotal, clearCart }) => {
           }
         }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Payment failed');
-      }
-
-      // Confirm payment
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+  
+      const paymentIntentData = await paymentIntentRes.json();
+      if (!paymentIntentRes.ok) throw new Error(paymentIntentData.error || 'Payment failed');
+  
+  
+      // Step 2: Confirm Payment
+      toast.info('Confirming payment...', { autoClose: 2000 });
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(paymentIntentData.clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
           billing_details: {
@@ -92,17 +122,50 @@ const CheckoutForm = ({ cart, subTotal, clearCart }) => {
           },
         },
       });
-
+  
       if (stripeError) {
-        throw stripeError;
+        toast.error(stripeError.message);
+        throw new Error(stripeError.message);
       }
-
+  
       if (paymentIntent.status === 'succeeded') {
-        toast.success('Payment successful! Redirecting...');
-        clearCart();
-        setTimeout(() => {
-          router.push(`/order-confirmation?id=${paymentIntent.id}`);
-        }, 1500);
+        // Prepare products array with all details
+        const products = Object.keys(cart).map(itemCode => ({
+          productId: cart[itemCode].id,
+          title: cart[itemCode].name, // Changed from 'name' to 'title' to match model
+          size: cart[itemCode].size,
+          color: cart[itemCode].variant, // Changed from 'variant' to 'color' to match model
+          quantity: cart[itemCode].qty,
+          img: cart[itemCode].image, // Changed from 'image' to 'img' to match model
+          amount: cart[itemCode].price // Added amount field
+        }));
+  
+        // Post Order with complete product details
+        const postOrderRes = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/orders/postorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formValues.email,
+            paymentId: paymentIntent.id,
+            products: products,
+            address: formValues.address,
+            city: formValues.city,
+            pincode: formValues.pincode,
+            state: formValues.state,
+            amount: subTotal,
+            onlinePayment: true,
+            status: 'Payment Processed'
+          }),
+        });
+  
+        const postOrderData = await postOrderRes.json();
+        if (!postOrderRes.ok) throw new Error(postOrderData.error || 'Order saving failed');
+        toast.success('Payment successful! Redirecting...', {
+          onClose: () => {
+            clearCart();
+            router.push(`/order-confirmation?id=${postOrderData.order.orderId}`);
+          }
+        });
       }
     } catch (err) {
       setError(err.message);
@@ -111,20 +174,23 @@ const CheckoutForm = ({ cart, subTotal, clearCart }) => {
       setProcessing(false);
     }
   };
+  
+  
 
   return (
     <>
-    <ToastContainer position="top-left"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick={false}
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-              transition={Slide}
+      <ToastContainer 
+        position="top-left"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        transition={Slide}
       />
       <div className="mb-6">
         <CardElement
@@ -167,7 +233,43 @@ const CheckoutForm = ({ cart, subTotal, clearCart }) => {
   );
 };
 
-const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
+const Checkout = ({ userInfo,  cart, clearCart, addToCart, removeFromCart, subTotal }) => {
+  const [formValues, setFormValues] = useState({
+    name: `${userInfo?.firstName || ''} ${userInfo?.lastName || ''}`.trim() || '',
+    email: userInfo?.email || '',
+    address: userInfo?.address || '',
+    phone: userInfo?.phone || '',
+    city: '',
+    state: '',
+    pincode: ''
+  });
+
+  const [errorMessage, setErrorMessage] = useState({
+    name: false,
+    email: false,
+    address: false,
+    phone: false,
+    city: false,
+    state: false,
+    pincode: false,
+  });
+
+  const getFieldError = (fieldName) => {
+    if (!errorMessage[fieldName]) return null;
+    
+    const messages = {
+      name: "Please enter your name",
+      email: "Please enter a valid email",
+      address: "Please enter your address",
+      phone: "Please enter a valid phone number (10-15 digits)",
+      city: "Please enter your city",
+      state: "Please enter your state",
+      pincode: "Please enter your postal code"
+    };
+    
+    return <p className="mt-1 text-sm text-red-600">{messages[fieldName]}</p>;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-6">
@@ -192,9 +294,14 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 type="text"
                 id="name"
                 name="name"
-                required
+                value={formValues.name}
+                onChange={(e) => {
+                  setFormValues({...formValues, name: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, name: false});
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {getFieldError('name')}
             </div>
 
             <div>
@@ -205,9 +312,14 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 type="email"
                 id="email"
                 name="email"
-                required
+                value={formValues.email}
+                onChange={(e) => {
+                  setFormValues({...formValues, email: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, email: false});
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {getFieldError('email')}
             </div>
 
             <div className="md:col-span-2">
@@ -217,10 +329,15 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
               <textarea
                 id="address"
                 name="address"
-                required
+                value={formValues.address}
+                onChange={(e) => {
+                  setFormValues({...formValues, address: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, address: false});
+                }}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-              ></textarea>
+              />
+              {getFieldError('address')}
             </div>
 
             <div>
@@ -231,9 +348,14 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 type="tel"
                 id="phone"
                 name="phone"
-                required
+                value={formValues.phone}
+                onChange={(e) => {
+                  setFormValues({...formValues, phone: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, phone: false});
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {getFieldError('phone')}
             </div>
 
             <div>
@@ -244,9 +366,14 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 type="text"
                 id="city"
                 name="city"
-                required
+                value={formValues.city}
+                onChange={(e) => {
+                  setFormValues({...formValues, city: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, city: false});
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {getFieldError('city')}
             </div>
 
             <div>
@@ -257,9 +384,14 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 type="text"
                 id="state"
                 name="state"
-                required
+                value={formValues.state}
+                onChange={(e) => {
+                  setFormValues({...formValues, state: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, state: false});
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {getFieldError('state')}
             </div>
 
             <div>
@@ -270,9 +402,14 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 type="text"
                 id="pincode"
                 name="pincode"
-                required
+                value={formValues.pincode}
+                onChange={(e) => {
+                  setFormValues({...formValues, pincode: e.target.value});
+                  if (e.target.value) setErrorMessage({...errorMessage, pincode: false});
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {getFieldError('pincode')}
             </div>
           </div>
         </div>
@@ -312,25 +449,15 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                         <p className="text-sm text-gray-500">
                           Color: <span 
                             className="inline-block w-4 h-4 rounded-full border border-gray-200 ml-1"
-                            style={{ backgroundColor: item.variant.toLowerCase() }}
+                            style={{ backgroundColor: (item.variant || '').toLowerCase() }}
                           />
                         </p>
                         <p className="text-pink-500 font-bold mt-1">PKR {item.price.toLocaleString('en-PK')}</p>
 
                         <div className="flex items-center mt-2">
-                          <button 
-                            onClick={() => removeFromCart(itemCode, 1, item.price, item.name, item.size, item.variant, item.image)} 
-                            className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
-                          >
-                            <AiOutlineMinus className="text-sm" />
-                          </button>
-                          <span className="mx-2 text-gray-700">{item.qty}</span>
-                          <button 
-                            onClick={() => addToCart(itemCode, 1, item.price, item.name, item.size, item.variant, item.image)} 
-                            className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
-                          >
-                            <AiOutlinePlus className="text-sm" />
-                          </button>
+                          
+                          <span className=" text-gray-700">{`Quantity: ${item.qty}`}</span>
+                          
                         </div>
                       </div>
                     </div>
@@ -345,7 +472,15 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
                 </div>
 
                 <Elements stripe={stripePromise}>
-                  <CheckoutForm cart={cart} subTotal={subTotal} clearCart={clearCart} />
+                  <CheckoutForm 
+                    cart={cart} 
+                    subTotal={subTotal} 
+                    clearCart={clearCart}
+                    formValues={formValues}
+                    setFormValues={setFormValues}
+                    errorMessage={errorMessage}
+                    setErrorMessage={setErrorMessage}
+                  />
                 </Elements>
 
                 <button 

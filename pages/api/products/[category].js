@@ -7,7 +7,6 @@ const handler = async (req, res)=>{
     if(!category){
         return res.status(400).json({error: "Category is required"});
     }
-    console.log(category);
     let products = await Product.find({category: category});
     res.status(200).json({products});
 }

@@ -10,10 +10,8 @@ const Slug = ({ product, addToCart, BuyNow }) => {
   useEffect(() => {
     const fetchPinService = async () => {
       try {
-        console.log("URL: ", `${process.env.NEXT_PUBLIC_HOST}/api/pincode`);
         const pins = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`);
         const pinJson = await pins.json();
-        console.log(pinJson)
         setService(pinJson.includes(parseInt(pin)));
       } catch (error) {
         console.error("Error fetching pincode service:", error);
@@ -132,6 +130,7 @@ const Slug = ({ product, addToCart, BuyNow }) => {
                   onClick={() => {
                     
                     addToCart(
+                      product._id,
                       product.slug,
                       1,
                       product.price,
