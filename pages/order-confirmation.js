@@ -1,77 +1,62 @@
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { BsCheckCircleFill, BsBoxSeam, BsCreditCard, BsShieldCheck } from 'react-icons/bs'
 import { FiTruck, FiClock } from 'react-icons/fi'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-const OrderConfirmation = () => {
-  const router = useRouter()
-  const { id } = router.query
-  const [orderData, setOrderData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+export async function getServerSideProps(context) {
+  const { id } = context.query
 
-  useEffect(() => {
-    if (!id) {
-      return
+  if (!id) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
     }
-  
-    const fetchOrderData = async () => {
-      try {
-        setLoading(true)
-        
-        // Add headers to ensure proper content-type
-        const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/orders/getorder`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ orderId: id })
-        })
-  
-        
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || 'Failed to fetch order details')
-        }
-  
-        const data = await response.json()
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Invalid order data received')
-        }
-  
-        setOrderData(data.order)
-        setError(null)
-      } catch (err) {
-        setError(err.message)
-        toast.error(err.message)
-        
-        if (err.message.includes('not found')) {
-          setTimeout(() => router.push('/'), 2000)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-  
-    fetchOrderData()
-  }, [id, router]) // Add router to dependency array
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your order details...</p>
-        </div>
-      </div>
-    )
   }
 
-  if (error || !orderData) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/orders/getorder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ orderId: id })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to fetch order details')
+    }
+
+    const data = await response.json()
+
+    if (!data.success) {
+      throw new Error(data.error || 'Invalid order data received')
+    }
+
+    return {
+      props: {
+        orderData: data.order
+      }
+    }
+  } catch (error) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    }
+  }
+}
+
+const OrderConfirmation = ({ orderData }) => {
+  const router = useRouter()
+
+  if (!orderData) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-md">
@@ -79,7 +64,7 @@ const OrderConfirmation = () => {
             <BsCheckCircleFill className="text-red-500 text-2xl" />
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Order Not Found</h2>
-          <p className="text-gray-600 mb-4">{error || 'We couldn\'t find your order details.'}</p>
+          <p className="text-gray-600 mb-4">{`We couldn't find your order details. `}</p>
           <button
             onClick={() => router.push('/')}
             className="bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600 transition"
@@ -283,7 +268,6 @@ const OrderConfirmation = () => {
               <button 
                 className="w-full bg-pink-500 text-white py-3 rounded-lg font-medium hover:bg-pink-600 transition duration-200 flex items-center justify-center"
                 onClick={() => {
-                  // Implement tracking functionality
                   toast.info('Tracking information will be sent to your email')
                 }}
               >

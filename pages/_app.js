@@ -28,8 +28,27 @@ export default function App({ Component, pageProps }) {
   const [user, setUser] = useState({ value: null });
   const [key, setKey] = useState();
   const [userInfo, setUserInfo] = useState(null);
-
-  
+  const [orders, setOrders] = useState([]);
+  const fetchUserOrders = async (token) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/orders/getorders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(token),
+      })
+      const data = await response.json();
+      if (data.error) {
+        console.error("Error fetching orders:", data.error);
+        return;
+      }
+      setOrders(data.orders);
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      
+    }
+  }
   const fetchUserDetails = async (token) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/getUser`, {
@@ -62,6 +81,7 @@ export default function App({ Component, pageProps }) {
     if(localStorage.getItem('token')) {
       setUser({ value: localStorage.getItem('token') });
       fetchUserDetails({ token: localStorage.getItem('token') });
+      fetchUserOrders({ token: localStorage.getItem('token') });
     }else{
       setUser({ value: null });
     }
@@ -187,6 +207,7 @@ export default function App({ Component, pageProps }) {
         BuyNow={BuyNow}
         user={user} // Pass user token
         userInfo={userInfo} // Pass user info to all pages
+        orders={orders} // Pass orders to all pages
         {...pageProps}
       />
       <Footer />

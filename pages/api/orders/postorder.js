@@ -45,7 +45,6 @@ const handler = async (req, res) => {
         break;
       }
     }
-    console.log("Products:", products);
     const newOrder = new Order({
       email,
       orderId: orderId,
