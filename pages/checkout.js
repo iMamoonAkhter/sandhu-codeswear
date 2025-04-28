@@ -10,27 +10,44 @@ import { useRouter } from "next/router";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setFormValues, errorMessage, setErrorMessage }) => {
+const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const [pin, setPin] = React.useState();
+  const [service, setService] = React.useState();
+
+  
+
+
   useEffect(() => {
     if(!localStorage.getItem('token')){
       router.push('/')
     }
+
+    const fetchPinService = async () => {
+          try {
+            const pins = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`,{
+              method: "POST",
+            });
+            const pinJson = await pins.json();
+            setService(pinJson);
+            console.log("Pin Code Service:", pinJson);
+          } catch (error) {
+            console.error("Error fetching pincode service:", error);
+            toast.error("Zip code service unavailable at the moment.Please try again later.");
+          }
+        };
+        fetchPinService();
   
-  }, [router.query])
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormValues(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when typing
-    if (value && errorMessage[name]) {
-      setErrorMessage(prev => ({ ...prev, [name]: false }));
-    }
-  };
+  }, [router.query, pin])
+
+  
+  
+  
+
  
   
 
@@ -139,7 +156,25 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setFormValues, er
           img: cart[itemCode].image, // Changed from 'image' to 'img' to match model
           amount: cart[itemCode].price // Added amount field
         }));
+        
+        // Prepare product quantity updates
+        const quantityUpdates = Object.keys(cart).map(itemCode => ({
+          _id: cart[itemCode].id,
+          availableQty: (cart[itemCode].availableQty - cart[itemCode].qty).toString()
+        }));
+
+        //Update product quantities in the database
+        const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/products/updateproduct`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(quantityUpdates)
+        });
   
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json();
+          throw new Error(errorData.error || 'Failed to update product quantities');
+        }
+
         // Post Order with complete product details
         const postOrderRes = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/orders/postorder`, {
           method: 'POST',
@@ -161,6 +196,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setFormValues, er
         const postOrderData = await postOrderRes.json();
         if (!postOrderRes.ok) throw new Error(postOrderData.error || 'Order saving failed');
         toast.success('Payment successful! Redirecting...', {
+
           onClose: () => {
             clearCart();
             router.push(`/order-confirmation?id=${postOrderData.order.orderId}`);
@@ -233,16 +269,44 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setFormValues, er
   );
 };
 
-const Checkout = ({ userInfo,  cart, clearCart, addToCart, removeFromCart, subTotal }) => {
+const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
+  const [postalCodeError, setPostalCodeError] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+  const router = useRouter();
   const [formValues, setFormValues] = useState({
-    name: `${userInfo?.firstName || ''} ${userInfo?.lastName || ''}`.trim() || '',
-    email: userInfo?.email || '',
-    address: userInfo?.address || '',
-    phone: userInfo?.phone || '',
+    name: '',
+    email: '',
+    address: '',
+    phone: '',
     city: '',
     state: '',
     pincode: ''
   });
+
+  
+const [accountEmail, setAccountEmail] = useState(''); 
+const [emailError, setEmailError] = useState('');
+const cartLength = Object.keys(cart).length; // Get the length of the cart object 
+  useEffect(() => {
+    if(cartLength === 0){
+      router.push('/')
+      toast.error('Your cart is empty. Please add items to your cart before checking out.');
+    }
+    const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userInfo) {
+      setAccountEmail(userInfo.email || '');
+      setFormValues(prev => ({
+        ...prev,
+        name: `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
+        email: userInfo.email || '',
+        address: userInfo.address || '',
+        phone: userInfo.phone || '',
+        city: '',
+        state: '',
+        pincode: ''
+      }));
+    }
+  }, [cartLength]);
 
   const [errorMessage, setErrorMessage] = useState({
     name: false,
@@ -253,7 +317,67 @@ const Checkout = ({ userInfo,  cart, clearCart, addToCart, removeFromCart, subTo
     state: false,
     pincode: false,
   });
+  const lookupPostalCode = async (postalCode) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pincode: postalCode }),
+      });
+      
+      const data = await response.json();
+      
+      
+  
+      if (data.city && data.state) {
+        setFormValues(prev => ({
+          ...prev,
+          city: data.city,
+          state: data.state,
+          pincode: postalCode
+        }));
+        setPostalCodeError(null); // Clear any previous error
+        setErrorMessage(prev => ({
+          ...prev,
+          city: false,
+          state: false,
+          pincode: false
+        }));
+      } else {
+        // If no data returned but request was successful
+        setFormValues(prev => ({
+          ...prev,
+          city: "",
+          state: ""
+        }));
+        setPostalCodeError("The service is not available");
+      }
+    } catch (error) {
+      setFormValues(prev => ({
+        ...prev,
+        city: "",
+        state: ""
+      }));
+      setPostalCodeError("The service is not available");
+    }
+  };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when typing
+    if (value && errorMessage[name]) {
+      setErrorMessage(prev => ({ ...prev, [name]: false }));
+    }
+
+    // Handle postal code lookup
+    if (name === 'pincode' && value.length >= 5) {
+      lookupPostalCode(value);
+    }
+  };
   const getFieldError = (fieldName) => {
     if (!errorMessage[fieldName]) return null;
     
@@ -314,11 +438,22 @@ const Checkout = ({ userInfo,  cart, clearCart, addToCart, removeFromCart, subTo
                 name="email"
                 value={formValues.email}
                 onChange={(e) => {
-                  setFormValues({...formValues, email: e.target.value});
-                  if (e.target.value) setErrorMessage({...errorMessage, email: false});
+                  const newEmail = e.target.value;
+                  setFormValues(prev => ({
+                    ...prev,
+                    email: newEmail
+                  }));
+              
+                  if (accountEmail && newEmail !== accountEmail) {
+                    setEmailError('Please use your account email.');
+                  } else {
+                    setEmailError('');
+                  }
                 }}
+                required
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
               />
+              {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
               {getFieldError('email')}
             </div>
 
@@ -395,22 +530,27 @@ const Checkout = ({ userInfo,  cart, clearCart, addToCart, removeFromCart, subTo
             </div>
 
             <div>
-              <label htmlFor="pincode" className="block text-sm font-medium text-gray-700 mb-1">
-                Postal Code
-              </label>
-              <input
-                type="text"
-                id="pincode"
-                name="pincode"
-                value={formValues.pincode}
-                onChange={(e) => {
-                  setFormValues({...formValues, pincode: e.target.value});
-                  if (e.target.value) setErrorMessage({...errorMessage, pincode: false});
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-              />
-              {getFieldError('pincode')}
-            </div>
+  <label htmlFor="pincode" className="block text-sm font-medium text-gray-700 mb-1">
+    Postal Code
+  </label>
+  <input
+    type="text"
+    id="pincode"
+    name="pincode"
+    value={formValues.pincode}
+    onChange={handleInputChange}
+    onBlur={(e) => {
+      if (e.target.value.length >= 5) {
+        lookupPostalCode(e.target.value);
+      }
+    }}
+    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+  />
+  {postalCodeError && (
+    <p className="mt-1 text-sm text-red-600">{postalCodeError}</p>
+  )}
+  {getFieldError('pincode')}
+</div>
           </div>
         </div>
 

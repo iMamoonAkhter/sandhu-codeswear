@@ -2,51 +2,25 @@ import Image from "next/image";
 import React, { useEffect } from "react";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-const Slug = ({ product, addToCart, BuyNow }) => {
-  const [pin, setPin] = React.useState();
-  const [service, setService] = React.useState(null);
+const Slug = ({ product, addToCart, BuyNow, cart }) => {
   const [selectedColor, setSelectedColor] = React.useState(product.color[0]);
   const [selectedSize, setSelectedSize] = React.useState(product.size[0]);
-  useEffect(() => {
-    const fetchPinService = async () => {
-      try {
-        const pins = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`);
-        const pinJson = await pins.json();
-        setService(pinJson.includes(parseInt(pin)));
-      } catch (error) {
-        console.error("Error fetching pincode service:", error);
-        toast.error("Zip code service unavailable at the moment.Please try again later.");
-      }
-    };
-    fetchPinService();
-  }, [pin]);
-  
-  const checkServiceAbility = async () => {
-    
-    if(service === true){
-      toast.success("Yay! This pincode is serviceable")
-    }else{
-      toast.error("Sorry! We do not deliver to this pincode yet")
-    }
-  };
 
-  const onChangePin = (e) => {
-    setPin(e.target.value);
-  };
- 
   return (
     <>
-    <ToastContainer position="top-right"
-      autoClose={5000}
-      hideProgressBar={false}
-      newestOnTop={false}
-      closeOnClick={false}
-      rtl={false}
-      pauseOnFocusLoss
-      draggable
-      pauseOnHover
-      theme="dark"
-      transition={Bounce} />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        transition={Bounce}
+      />
       <section className="text-gray-600 body-font overflow-hidden">
         <div className="container px-5 py-24 mx-auto">
           <div className="lg:w-4/5 mx-auto flex flex-wrap">
@@ -122,48 +96,62 @@ const Slug = ({ product, addToCart, BuyNow }) => {
                 <span className="title-font font-medium text-2xl text-gray-900">
                   ${product.price}
                 </span>
-                <button className="flex ml-8 text-white bg-pink-500 border-0 py-2 md:px-6 px-2 focus:outline-none hover:bg-pink-600 rounded"  onClick={() => BuyNow(product, selectedSize, selectedColor)}>
+                <button
+                  disabled={
+                    !selectedSize ||
+                    !selectedColor ||
+                    cart[`${product.slug}~~${selectedSize}~~${selectedColor}`]
+                      ?.qty >= product.availableQty
+                  }
+                  className={`bg-pink-500 text-white px-4 py-2 rounded ml-2 mr-2 ${
+                    !selectedSize ||
+                    !selectedColor ||
+                    cart[`${product.slug}~~${selectedSize}~~${selectedColor}`]
+                      ?.qty >= product.availableQty
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-pink-600 cursor-pointer"
+                  }`}
+                  onClick={() => BuyNow(product, selectedSize, selectedColor)}
+                >
                   Buy Now
                 </button>
                 <button
-                  className="flex ml-4 text-white bg-pink-500 border-0 py-2 px-2 md:px-6 focus:outline-none hover:bg-pink-600 rounded"
                   onClick={() => {
-                    
-                    addToCart(
-                      product._id,
-                      product.slug,
-                      1,
-                      product.price,
-                      product.title,
-                      product.category,
-                      selectedSize,
-                      selectedColor,
-                      product.img
-                    );
+                    if (selectedSize && selectedColor) {
+                      addToCart(
+                        product._id,
+                        product.slug,
+                        1,
+                        product.price,
+                        product.title,
+                        product.category,
+                        selectedSize,
+                        selectedColor,
+                        product.img,
+                        product.availableQty
+                      );
+                    } else {
+                      alert("Please select size and color");
+                    }
                   }}
-                  
+                  disabled={
+                    !selectedSize ||
+                    !selectedColor ||
+                    cart[`${product.slug}~~${selectedSize}~~${selectedColor}`]
+                      ?.qty >= product.availableQty
+                  }
+                  className={`bg-pink-500 text-white px-4 py-2 rounded ${
+                    !selectedSize ||
+                    !selectedColor ||
+                    cart[`${product.slug}~~${selectedSize}~~${selectedColor}`]
+                      ?.qty >= product.availableQty
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-pink-600 cursor-pointer"
+                  }`}
                 >
                   Add to Cart
                 </button>
               </div>
-
-              {/* Pincode */}
-              <div className="pin mt-6 flex space-x-2 text-sm">
-                <input
-                  onChange={onChangePin}
-                  className="px-2 border-2 border-gray-400 rounded-md"
-                  type="text"
-                  placeholder="Enter your Pincode"
-                />
-                <button
-                  className="text-white bg-pink-500 border-0 py-2 px-6 focus:outline-none hover:bg-pink-600 rounded cursor-pointer"
-                  onClick={checkServiceAbility}
-                >
-                  Check
-                </button>
-              </div>
-
-              
             </div>
           </div>
         </div>

@@ -61,6 +61,7 @@ export default function App({ Component, pageProps }) {
 
       const data = await response.json();
       setUserInfo(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
     } catch (error) {
       console.error("Error fetching user details:", error);
       
@@ -71,11 +72,17 @@ export default function App({ Component, pageProps }) {
     try {
       if (localStorage.getItem('cart')) {
         const storedCart = JSON.parse(localStorage.getItem('cart'));
+        // Ensure all quantities are proper numbers
+        Object.keys(storedCart).forEach(key => {
+          storedCart[key].qty = Math.max(1, Number(storedCart[key].qty) || 1);
+          storedCart[key].availableQty = Number(storedCart[key].availableQty) || 999;
+        });
         setCart(storedCart);
         saveCart(storedCart);
       }
     } catch (error) {
       localStorage.clear();
+      console.error("Error parsing cart data:", error);
     }
 
     if(localStorage.getItem('token')) {
@@ -99,17 +106,34 @@ export default function App({ Component, pageProps }) {
     setSubTotal(subt);
   }, []);
 
-  const addToCart = useCallback((id, slug, qty, price, name, category, size, variant, image) => {
+  const addToCart = useCallback((id, slug, qty, price, name, category, size, variant, image, availableQty) => {
     const itemCode = `${slug}~~${size}~~${variant}`;
     setCart(prevCart => {
-      // Create a new cart object only if needed
       const newCart = JSON.parse(JSON.stringify(prevCart));
       
+      // Ensure quantities are numbers
+      const quantityToAdd = Number(qty);
+      const availableQuantity = Number(availableQty);
+      
       if (newCart[itemCode]) {
-        newCart[itemCode].qty += qty;
+        const currentQty = Number(newCart[itemCode].qty) || 0;
+        // Only add if the new total won't exceed available quantity
+        if (currentQty + quantityToAdd <= availableQuantity) {
+          newCart[itemCode].qty = currentQty + quantityToAdd;
+        }
       } else {
+        // For new items, don't exceed available quantity
         newCart[itemCode] = {
-          id, slug, qty, price, name, category, size, variant, image
+          id,
+          slug,
+          qty: Math.min(quantityToAdd, availableQuantity),
+          price: Number(price),
+          name,
+          category,
+          size,
+          variant,
+          image,
+          availableQty: availableQuantity
         };
       }
       
@@ -127,6 +151,11 @@ export default function App({ Component, pageProps }) {
     localStorage.removeItem('token');
     setKey(Math.random());
     setUser({ value: null });
+    localStorage.removeItem('user');
+    setUserInfo(null);
+    setOrders([]);
+    setCart({});
+    saveCart({});
     router.push('/');
   };
 
@@ -135,7 +164,11 @@ export default function App({ Component, pageProps }) {
       const newCart = JSON.parse(JSON.stringify(prevCart));
       
       if (newCart[itemCode]) {
-        newCart[itemCode].qty -= qty;
+        const currentQty = Number(newCart[itemCode].qty) || 0;
+        const removeQty = Number(qty) || 1;
+        
+        newCart[itemCode].qty = Math.max(0, currentQty - removeQty);
+        
         if (newCart[itemCode].qty <= 0) {
           delete newCart[itemCode];
         }
@@ -156,8 +189,9 @@ export default function App({ Component, pageProps }) {
       size: selectedSize,
       variant: selectedColor,
       image: product.img,
+      availableQty: product.availableQty
     });
-
+  
     setCart({});
     saveCart({});
   };

@@ -102,7 +102,7 @@ const Login = () => {
                     Remember me
                   </label>
                 </div>
-                <div className="text-sm">
+                <div className="text-sm cursor-pointer">
                   <Link href="/forgot-password" legacyBehavior className="text-blue-600 hover:underline font-semibold">
                     <a>Forgot your password?</a>
                   </Link>
@@ -110,11 +110,11 @@ const Login = () => {
               </div>
 
               <div className="!mt-12">
-                <button type="submit" className="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                <button type="submit" className="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer">
                   Sign in
                 </button>
               </div>
-              <p className="text-slate-800 text-sm !mt-6 text-center">{`Don't have an account?`} <Link legacyBehavior href="/signup" className="text-blue-600 hover:underline ml-1 whitespace-nowrap font-semibold"><a>Register here</a></Link></p>
+              <p className="text-slate-800 text-sm !mt-6 text-center">{`Don't have an account?`} <Link legacyBehavior href="/signup" className="text-blue-600 hover:underline ml-1 whitespace-nowrap font-semibold cursor-pointer"><a>Register here</a></Link></p>
             </form>
           </div>
         </div>
