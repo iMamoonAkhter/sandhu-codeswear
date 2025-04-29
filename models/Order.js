@@ -70,6 +70,8 @@ const OrderSchema = new Schema({
     pincode: {
         type: String,
         required: true,
+        min: [5, "Pincode must be 5 digits"],
+        max: [5, "Pincode must be 5 digits"],
     }
 }, {timestamps: true});
 

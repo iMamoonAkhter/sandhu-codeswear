@@ -8,6 +8,11 @@ const nextConfig = {
         hostname: 'm.media-amazon.com',
         pathname: '/images/**',
       },
+      {
+        protocol: "https",
+        hostname: "static.vecteezy.com",
+        pathname: "/system/resources/**",
+      }
     ],
   },
 };

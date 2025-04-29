@@ -10,7 +10,7 @@ import { useRouter } from "next/router";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }) => {
+const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,errorMessage }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -29,7 +29,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }
 
     const fetchPinService = async () => {
           try {
-            const pins = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`,{
+            const pins = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/getallpincode`,{
               method: "POST",
             });
             const pinJson = await pins.json();
@@ -44,7 +44,23 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }
   
   }, [router.query, pin])
 
-  
+  const [isPincodeServiceable, setIsPincodeServiceable] = useState(false);
+
+  const checkPincodeServiceability = async (pincode) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pincode })
+      });
+      
+      const data = await response.json();
+      return !!data.city && !!data.state; // Returns true if serviceable
+    } catch (error) {
+      console.error("Error checking pincode:", error);
+      return false;
+    }
+  };
   
   
 
@@ -60,6 +76,14 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }
       toast.error('Stripe not initialized');
       return;
     }
+     // First validate pincode serviceability
+     const isServiceable = await checkPincodeServiceability(formValues.pincode);
+     if (!isServiceable) {
+       setProcessing(false);
+       setErrorMessage(prev => ({ ...prev, pincode: true }));
+       toast.error('Sorry, we do not deliver to this pincode');
+       return;
+     }
   
     try {
       // Validate required fields
@@ -86,12 +110,17 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }
         setErrorMessage(prev => ({ ...prev, phone: true }));
         hasError = true;
       }
+      if(formValues.pincode && !/^[0-9]{5}$/.test(formValues.pincode)) {
+        setErrorMessage(prev => ({ ...prev, pincode: true }));
+        hasError = true;
+      }
   
       if (hasError) {
         setProcessing(false);
         return;
       }
-  
+      
+      
       // Step 1: Create Payment Intent
       toast.info('Initiating payment...', { autoClose: 2000 });
       const paymentIntentRes = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/create-payment-intent`, {
@@ -243,6 +272,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage }
                 color: '#9e2146',
               },
             },
+            hidePostalCode: true
           }}
         />
       </div>
@@ -293,6 +323,7 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
       toast.error('Your cart is empty. Please add items to your cart before checking out.');
     }
     const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+    
     if (userInfo) {
       setAccountEmail(userInfo.email || '');
       setFormValues(prev => ({
@@ -329,8 +360,6 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
       
       const data = await response.json();
       
-      
-  
       if (data.city && data.state) {
         setFormValues(prev => ({
           ...prev,
@@ -338,21 +367,22 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
           state: data.state,
           pincode: postalCode
         }));
-        setPostalCodeError(null); // Clear any previous error
+        setPostalCodeError(null);
         setErrorMessage(prev => ({
           ...prev,
           city: false,
           state: false,
           pincode: false
         }));
+        return true; // Serviceable
       } else {
-        // If no data returned but request was successful
         setFormValues(prev => ({
           ...prev,
           city: "",
           state: ""
         }));
-        setPostalCodeError("The service is not available");
+        setPostalCodeError("Sorry, we don't deliver to this area");
+        return false; // Not serviceable
       }
     } catch (error) {
       setFormValues(prev => ({
@@ -360,7 +390,8 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
         city: "",
         state: ""
       }));
-      setPostalCodeError("The service is not available");
+      setPostalCodeError("Service unavailable. Please try again later.");
+      return false; // Not serviceable due to error
     }
   };
 
@@ -529,7 +560,7 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
               {getFieldError('state')}
             </div>
 
-            <div>
+<div>
   <label htmlFor="pincode" className="block text-sm font-medium text-gray-700 mb-1">
     Postal Code
   </label>
@@ -539,9 +570,12 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
     name="pincode"
     value={formValues.pincode}
     onChange={handleInputChange}
-    onBlur={(e) => {
+    onBlur={async (e) => {
       if (e.target.value.length >= 5) {
-        lookupPostalCode(e.target.value);
+        const isServiceable = await lookupPostalCode(e.target.value);
+        if (!isServiceable) {
+          setPostalCodeError("Sorry, we don't deliver to this area");
+        }
       }
     }}
     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"

@@ -1,6 +1,5 @@
 import { Order } from "@/models/Order";
 import { connectDB } from "@/middleware/mongoose";
-
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -30,12 +29,15 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: 'Invalid products data' });
     }
 
+
     // Validate each product has required fields
     for (const product of products) {
       if (!product.productId || !product.size || !product.color || !product.quantity) {
         return res.status(400).json({ error: 'Invalid product data' });
       }
     }
+
+
     let orderId = "";
     while(true){
       orderId = `ORD-${Math.floor(Math.random() * 1000000)}`; // Generate a random order ID

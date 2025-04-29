@@ -1,11 +1,14 @@
+import NotFoundPage from "@/components/NotFound";
 import Image from "next/image";
 import React, { useEffect } from "react";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-const Slug = ({ product, addToCart, BuyNow, cart }) => {
-  const [selectedColor, setSelectedColor] = React.useState(product.color[0]);
-  const [selectedSize, setSelectedSize] = React.useState(product.size[0]);
-
+const Slug = ({ product, addToCart, BuyNow, cart, notFound }) => {
+  const [selectedColor, setSelectedColor] = React.useState(product?.color[0]);
+  const [selectedSize, setSelectedSize] = React.useState(product?.size[0]);
+  if (notFound) {
+    return <NotFoundPage />
+  }
   return (
     <>
       <ToastContainer
@@ -160,24 +163,49 @@ const Slug = ({ product, addToCart, BuyNow, cart }) => {
   );
 };
 
+
 export async function getServerSideProps(context) {
   const { category, slug } = context.params;
 
-  const product = await fetch(
-    `${process.env.NEXT_PUBLIC_HOST}/api/products/${category}/${slug}`
-  )
-    .then((res) => res.json())
-    .catch((err) => console.log(err));
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_HOST}/api/products/${category}/${slug}`
+    );
+    
+    // If response is not OK (404, 500 etc.)
+    if (!res.ok) {
+      return {
+        props: {
+          notFound: true
+        }
+      };
+    }
 
-  if (!product) {
+    const data = await res.json();
+    
+    // If product doesn't exist in response
+    if (!data.product) {
+      return {
+        props: {
+          notFound: true
+        }
+      };
+    }
+
     return {
-      notFound: true,
+      props: { 
+        product: data.product,
+        notFound: false 
+      },
+    };
+  } catch (error) {
+    // If any error occurs during fetching
+    return {
+      props: {
+        notFound: true
+      }
     };
   }
-
-  return {
-    props: { product: product.product },
-  };
 }
 
 export default Slug;

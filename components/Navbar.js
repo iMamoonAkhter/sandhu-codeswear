@@ -19,7 +19,7 @@ const Navbar = ({
   subTotal,
 }) => {
   const ref = useRef();
-
+  
   const toggleCart = () => {
     if (ref.current.classList.contains("translate-x-full")) {
       ref.current.classList.remove("translate-x-full");
@@ -86,7 +86,7 @@ const Navbar = ({
             {dropdown && (
               <div className="absolute right-0 top-6 w-40 bg-white shadow-md rounded-md py-2 z-50">
                 <ul className="text-sm text-gray-700">
-                  <Link href="/myaccount">
+                  <Link href="/account">
                     <li className="px-4 py-2 hover:bg-pink-100">My Account</li>
                   </Link>
                   <hr />
