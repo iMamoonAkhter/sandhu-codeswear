@@ -22,39 +22,79 @@ const Signup = () => {
       if(token){
         router.push('/')
       }
-    }, [])
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = {firstName, lastName, email, password, phone, dob, gender, newsletter}
-    const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    let data = await response.json();
-    setFirstName('')
-    setLastName('')
-    setEmail('')
-    setPassword('')
-    setPhone('')
-    setDob('')
-    setGender('')
-    setNewsletter(false)
-    toast.success(data.success, {
-        position: "bottom-left",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-        transition: Slide,
-      })
-  }
+    }, [router.query])
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+    
+      // Validate email format
+      const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      if (!emailPattern.test(email)) {
+        toast.error("Invalid email format");
+        return;
+      }
+    
+      // Validate phone number length
+      if (phone.length !== 11) {
+        toast.error("Phone number must be 11 digits");
+        return;
+      }
+    
+      const formData = { firstName, lastName, email, password, phone, dob, gender, newsletter };
+    
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/users/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+    
+        // Check for valid JSON response
+        let data;
+        try {
+          data = await response.json();
+        } catch (err) {
+          toast.error("Unexpected response from the server");
+          return;
+        }
+    
+        if (response.ok) {
+          // Show success toast
+          toast.success(data.message || "Account created successfully!", {
+            position: "top-left",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Slide,
+            onClose: () => {
+              // Reset form
+              setFirstName('');
+              setLastName('');
+              setEmail('');
+              setPassword('');
+              setPhone('');
+              setDob('');
+              setGender('');
+              setNewsletter(false);
+    
+              // Redirect after toast closes
+              router.push('/login');
+            },
+          });
+        } else {
+          toast.error(data.message || "Registration failed");
+        }
+      } catch (error) {
+        console.error("Signup error:", error);
+        toast.error("An error occurred during registration");
+      }
+    };
+    
 
   return (
     <div>
@@ -152,7 +192,7 @@ const Signup = () => {
                 </div>
 
                 <div className="!mt-8">
-                  <button type="submit" className="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                  <button type="submit" className="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer">
                     Create Account
                   </button>
                 </div>

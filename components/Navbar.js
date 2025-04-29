@@ -94,9 +94,12 @@ const Navbar = ({
                     <li className="px-4 py-2 hover:bg-pink-100">Orders</li>
                   </Link>
                   <hr />
-                  <button onClick={logout}>
-                    <li className="px-4 py-2 hover:bg-pink-100">Logout</li>
-                  </button>
+                  <button
+  className="hover:bg-pink-100 w-full text-left px-4 py-2 transition cursor-pointer"
+  onClick={logout}
+>
+  Logout
+</button>
 
                   <hr />
                 </ul>
