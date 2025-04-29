@@ -20,8 +20,46 @@ const DeliveryDetails = () => {
     if (storedEmail) {
       setDeliveryData(prev => ({ ...prev, email: storedEmail }));
     }
+    fetchDeliveryDetails()
   }, []);
-
+  const fetchDeliveryDetails = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.email) {
+        toast.error('User email not found.');
+        return;
+      }
+  
+      const res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/delivery/get-delivery`, {
+        method: 'POST', // change to POST
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: user.email }),
+      });
+  
+      if (!res.ok) {
+        throw new Error('Failed to fetch delivery details');
+      }
+  
+      const data = await res.json();
+  
+      if (!data?.data?.[0]) {
+        toast.error('No delivery data found for the user.');
+        return;
+      }
+  
+      setDeliveryData(prev => ({
+        ...prev,
+        ...data.data[0],
+        pincode: data.data[0]?.postalCode || '',
+      }));
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load delivery details.');
+    }
+  };
+  
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setDeliveryData(prev => ({ ...prev, [name]: value }));
@@ -64,7 +102,7 @@ const DeliveryDetails = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsUpdating(true);
-
+  
     try {
       // Check pincode validity again before updating
       const res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/pincode`, {
@@ -74,28 +112,38 @@ const DeliveryDetails = () => {
         },
         body: JSON.stringify({ pincode: deliveryData.pincode }),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok || !data.city || !data.state) {
         toast.error('Pincode is not available. Cannot update.');
         setIsUpdating(false);
         return;
       }
-
+  
+      // Prepare data for API with correct field names
+      const apiData = {
+        email: deliveryData.email,
+        address: deliveryData.address,
+        city: deliveryData.city,
+        state: deliveryData.state,
+        postalCode: deliveryData.pincode,  // Map pincode to postalCode
+        country: deliveryData.country
+      };
+  
       // Proceed with update
       const updateRes = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/delivery/update-delivery`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(deliveryData)
+        body: JSON.stringify(apiData)  // Send the correctly formatted data
       });
-
+  
       if (!updateRes.ok) {
         throw new Error('Failed to update delivery details');
       }
-
+  
       setIsEditing(false);
       toast.success('Delivery details updated successfully!');
     } catch (error) {

@@ -5,6 +5,9 @@ import { User } from '../models/User';
 
 const postDelivery = async (req, res) => {
   try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
     const { email, address, city, state, postalCode, country } = req.body;
 
     // Validate required fields

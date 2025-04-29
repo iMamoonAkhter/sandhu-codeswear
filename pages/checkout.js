@@ -24,6 +24,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,e
 
   useEffect(() => {
     if(!localStorage.getItem('token')){
+      console.log("Token: ", localStorage.getItem('token'))
       router.push('/')
     }
 
@@ -299,7 +300,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,e
   );
 };
 
-const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
+const Checkout = ({cart, clearCart, addToCart, removeFromCart, subTotal }) => {
   const [postalCodeError, setPostalCodeError] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const router = useRouter();
@@ -313,17 +314,61 @@ const Checkout = ({ cart, clearCart, addToCart, removeFromCart, subTotal }) => {
     pincode: ''
   });
 
+
+  const [accountEmail, setAccountEmail] = useState(''); 
+  const [emailError, setEmailError] = useState('');
+  const cartLength = Object.keys(cart).length; // Get the length of the cart object 
+  const [deliveryDetails, setDeliveryDetails] = useState(null); // Get delivery detail from server
+  useEffect(() => {
+    const fetchDeliveryDetails = async () => {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!userInfo?.email) return;
   
-const [accountEmail, setAccountEmail] = useState(''); 
-const [emailError, setEmailError] = useState('');
-const cartLength = Object.keys(cart).length; // Get the length of the cart object 
+        const response = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/delivery/get-delivery`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ email: userInfo.email })
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to fetch delivery details');
+        }
+  
+        const data = await response.json();
+        console.log('Fetched delivery details:', data); // Log the response
+        setDeliveryDetails(data.data[0] || null); // Assuming data is an array
+  
+        if (data.data && data.data.length > 0) {
+          const details = data.data[0];
+          setFormValues(prev => ({
+            ...prev,
+            address: details.address || '',
+            city: details.city || '',
+            state: details.state || '',
+            pincode: details.postalCode || ''
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching delivery details:', error);
+        toast.error('Failed to load delivery details');
+      }
+    };
+  
+    fetchDeliveryDetails();
+  }, []);
+  
   useEffect(() => {
     if(cartLength === 0){
+      console.log("Cart Length: ", cartLength)
       router.push('/')
       toast.error('Your cart is empty. Please add items to your cart before checking out.');
     }
     const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
-    
+    console.log(deliveryDetails)
     if (userInfo) {
       setAccountEmail(userInfo.email || '');
       setFormValues(prev => ({
@@ -332,9 +377,9 @@ const cartLength = Object.keys(cart).length; // Get the length of the cart objec
         email: userInfo.email || '',
         address: userInfo.address || '',
         phone: userInfo.phone || '',
-        city: '',
-        state: '',
-        pincode: ''
+        city: deliveryDetails?.city || '',
+        state: deliveryDetails?.state || '',
+        pincode: deliveryDetails?.postalCode || ''
       }));
     }
   }, [cartLength]);
