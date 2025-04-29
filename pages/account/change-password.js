@@ -22,7 +22,7 @@ const PasswordPage = () => {
       if (!localStorage.getItem('token')) {
         router.push('/login');
       }
-    }, [router.query]);
+    }, [router]);
 
   const isActive = (path) => {
     return router.pathname === `/account/${path}` || 

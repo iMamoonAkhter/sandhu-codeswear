@@ -16,7 +16,7 @@ const VerifyToken = () => {
         if(token) {
             router.push('/')
         }
-    }, [router.query])
+    }, [router])
 
     useEffect(() => {
         let timer

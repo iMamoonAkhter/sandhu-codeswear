@@ -17,7 +17,7 @@ const ChangePassword = () => {
         setUserInfo(user);
       }
     }
-  }, [router.query])
+  }, [router])
   
   const [formData, setFormData] = useState({
     currentPassword: '',

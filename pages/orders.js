@@ -11,7 +11,7 @@ const Orders = ({ orders }) => {
     if(!localStorage.getItem('token')){
       router.push('/')
     }
-  }, [router.query])
+  }, [router])
 
   const getStatusIcon = (status) => {
     switch(status) {

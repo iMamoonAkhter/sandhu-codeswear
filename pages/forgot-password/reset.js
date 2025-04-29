@@ -17,7 +17,7 @@ const Reset = () => {
         if(token) {
             router.push('/')
         }
-    }, [router.query])
+    }, [router])
 
     const handleSubmit = async (e) => {
         e.preventDefault()

@@ -23,7 +23,7 @@ const DeliveryPage = () => {
     if (!localStorage.getItem('token')) {
       router.push('/login');
     }
-  }, [router.query]);
+  }, [router]);
 
   const fetchDeliveryData = async (email) => {
     try {

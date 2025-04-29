@@ -94,7 +94,7 @@ export default function App({ Component, pageProps }) {
     }
     
     setKey(Math.random());
-  }, [router.query]);
+  }, [router]);
 
   const saveCart = useCallback((myCart) => {
     localStorage.setItem('cart', JSON.stringify(myCart));
