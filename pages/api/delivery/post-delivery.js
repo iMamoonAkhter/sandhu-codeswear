@@ -1,7 +1,8 @@
 // controllers/deliveryController.js
 import { connectDB } from '@/middleware/mongoose';
-import { Delivery } from '../models/Delivery';
-import { User } from '../models/User';
+import { Delivery } from '@/models/DeliveryDetails';
+import { User } from '@/models/User';
+
 
 const postDelivery = async (req, res) => {
   try {
