@@ -89,7 +89,7 @@ const Reset = () => {
                             <Image 
                                 width={10} 
                                 height={10} 
-                                src="https://readymadeui.com/readymadeui.svg" 
+                                src="/logo.png" 
                                 alt="logo" 
                                 className="w-40 mb-8 mx-auto block" 
                             />

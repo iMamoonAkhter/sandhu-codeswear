@@ -6,6 +6,7 @@ import { Router, useRouter } from "next/router";
 import NProgress, { set } from 'nprogress';
 import 'nprogress/nprogress.css';
 import { useCallback, useEffect, useState } from "react";
+import { Slide, toast, ToastContainer } from "react-toastify";
 
 // Configure NProgress
 NProgress.configure({ showSpinner: false, speed: 1000 });
@@ -107,6 +108,14 @@ export default function App({ Component, pageProps }) {
   }, []);
 
   const addToCart = useCallback((id, slug, qty, price, name, category, size, variant, image, availableQty) => {
+    if(!localStorage.getItem('token')){
+      toast.error("Please login to continue", {
+        onClose: ()=>{
+          router.push('/login');
+        },autoClose: 2000
+      });
+      return;
+    }
     const itemCode = `${slug}~~${size}~~${variant}`;
     setCart(prevCart => {
       const newCart = JSON.parse(JSON.stringify(prevCart));
@@ -180,6 +189,14 @@ export default function App({ Component, pageProps }) {
   }, [saveCart]);
 
   const BuyNow = (product, selectedSize, selectedColor) => {
+    if(!localStorage.getItem('token')){
+      toast.error("Please login to continue", {
+        onClose: ()=>{
+          router.push('/login');
+        },autoClose: 2000
+      });
+      return;
+    }
     setBuyNowItem({
       id: product._id,
       slug: product.slug,
@@ -216,7 +233,22 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
+    <ToastContainer 
+        position="top-left"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        transition={Slide}
+      />
+
     <Head>
+      <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
       <script src="https://js.stripe.com/v3/" async></script>
     </Head>
       {key &&

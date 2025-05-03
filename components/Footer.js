@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -9,23 +10,12 @@ const Footer = () => {
           <div className="w-64 flex-shrink-0 md:mx-0 mx-auto text-center md:text-left">
             <Link href={"/"} legacyBehavior>
               <a className="flex title-font font-medium items-center md:justify-start justify-center text-gray-900">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="w-10 h-10 text-white p-2 bg-pink-500 rounded-full"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                </svg>
+                <Image src={"/logo.png"} width={40} height={40} alt="logo"/>
                 <span className="ml-3 text-xl">Sandhu CodesWear</span>
               </a>
             </Link>
             <p className="mt-2 text-sm text-gray-500 px-4">
-              {/* Optional tagline or leave empty */}
+              Premium coding merchandise for developers
             </p>
           </div>
           <div className="flex-grow flex flex-wrap md:pl-20 -mb-10 md:mt-0 mt-10 md:text-left text-center">
@@ -78,15 +68,47 @@ const Footer = () => {
                 </li>
               </nav>
             </div>
+            <div className="lg:w-1/4 md:w-1/2 w-full px-4">
+              <h2 className="title-font font-medium text-gray-900 tracking-widest text-sm mb-3">
+                CONTACT US
+              </h2>
+              <nav className="list-none mb-10">
+                <li className="text-gray-600 mb-2">
+                  <span className="font-medium">Location:</span> Lahore, Punjab, Pakistan
+                </li>
+                <li className="text-gray-600 mb-2">
+                  <span className="font-medium">Phone:</span> 042-9563256520
+                </li>
+                <li className="text-gray-600 mb-2">
+                  <span className="font-medium">Email:</span> help@sandhucodeswear.com
+                </li>
+              </nav>
+            </div>
+            <div className="lg:w-1/4 md:w-1/2 w-full px-4">
+              <h2 className="title-font font-medium text-gray-900 tracking-widest text-sm mb-3">
+                OUR LOCATION
+              </h2>
+              <div className="h-48 rounded-lg overflow-hidden">
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d435519.2273814068!2d74.00473255689361!3d31.483103667512736!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39190483e58107d9%3A0xc23abe6ccc7e2462!2sLahore%2C%20Pakistan!5e0!3m2!1sen!2s!4v1746283682546!5m2!1sen!2s" 
+                  width="100%" 
+                  height="100%" 
+                  style={{ border: 0 }} 
+                  allowFullScreen 
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-lg"
+                ></iframe>
+              </div>
+            </div>
           </div>
         </div>
         <div className="bg-gray-100">
           <div className="container mx-auto py-4 px-5 flex flex-wrap flex-col sm:flex-row">
             <p className="text-gray-500 text-sm text-center sm:text-left">
-              © {new Date().getFullYear()} Sandhu CodesWear
+              © {new Date().getFullYear()} Sandhu CodesWear - All rights reserved
             </p>
             <span className="inline-flex sm:ml-auto sm:mt-0 mt-2 justify-center sm:justify-start">
-              {/* Optional social icons - add your actual links */}
               <a href="#" className="text-gray-500">
                 <svg
                   fill="currentColor"

@@ -131,7 +131,7 @@ const VerifyToken = () => {
                 <div className="min-h-screen flex flex-col items-center justify-center py-6 px-4">
                     <div className="max-w-md w-full">
                         <Image 
-                            src="https://readymadeui.com/readymadeui.svg" 
+                            src="/logo.png" 
                             width={40} 
                             height={40} 
                             alt="logo" 

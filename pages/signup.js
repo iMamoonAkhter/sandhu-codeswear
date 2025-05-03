@@ -115,7 +115,7 @@ const Signup = () => {
         <div className="min-h-screen flex flex-col items-center justify-center py-6 px-4">
           <div className="max-w-md w-full">
             <a href="javascript:void(0)">
-              <Image width={40} height={40} src="https://readymadeui.com/readymadeui.svg" alt="logo" className="w-40 mb-8 mx-auto block" />
+              <Image width={40} height={40} src="/logo.png" alt="logo" className="w-40 mb-8 mx-auto block" />
             </a>
 
             <div className="p-8 rounded-2xl bg-white shadow">

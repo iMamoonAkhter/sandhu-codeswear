@@ -34,13 +34,22 @@ const Navbar = ({
   const toggleDropdown = () => {
     setDropdown(!dropdown);
   };
+  const checkoutRoute = () => {
+    if(!localStorage.getItem('token')){
+      alert("Please login to continue");
+      router.push('/login');
+      return;
+    }
+    router.push("/checkout");
+  }
+
 
   return (
     <div className="flex flex-col md:flex-row justify-center md:justify-start items-center py-2 shadow-md sticky top-0 bg-white z-50">
       {/* Logo */}
       <div className="logo md:mr-5 mr-auto mx-5">
         <Link href={"/"}>
-          <Image width={100} height={40} src="/home.jpg" alt="Logo" />
+          <Image width={100} height={40} src="/logo.png" alt="Logo" />
         </Link>
       </div>
 
@@ -236,7 +245,7 @@ const Navbar = ({
               </div>
 
               {/* Checkout Button */}
-              <Link href={"/checkout"}>
+              <Link onClick={checkoutRoute}>
                 <button className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition mt-4 flex items-center justify-center gap-2 cursor-pointer">
                   <BsFillBagCheckFill className="text-lg" />
                   Checkout
