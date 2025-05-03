@@ -1,7 +1,9 @@
 import { Product } from "@/models/Product";
 import { connectDB } from "@/middleware/mongoose";
+import { applyCors } from "@/lib/cors";
 
 const handler = async (req, res) => {
+  if(applyCors(req, res)) return;
   if (req.method === "PUT") {
     try {
       for (let i = 0; i < req.body.length; i++) {

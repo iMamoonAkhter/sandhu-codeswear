@@ -1,7 +1,9 @@
 import { Order } from "@/models/Order";
 import { connectDB } from "@/middleware/mongoose";
+import { applyCors } from "@/lib/cors";
 
 const handler = async (req, res) => {
+  if(applyCors(req, res)) return;
   if (req.method !== "PUT") {
     return res.status(405).json({ error: "Method not allowed" });
   }
