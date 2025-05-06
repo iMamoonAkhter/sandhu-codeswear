@@ -6,7 +6,8 @@ let isConnected = false; // Avoid multiple connections in development
 export const connectDB = (handler) => async (req, res) => {
   if (!isConnected) {
     try {
-      await mongoose.connect(process.env.MONGODB_URI);
+      await mongoose.connect("mongodb+srv://imamoonakhter:WnFVSVONpbv9uULB@cluster0.8lrkis4.mongodb.net/sandhucodeswear");
+      //await mongoose.connect(process.env.MONGODB_URI);
       isConnected = true;
     } catch (error) {
       
