@@ -29,13 +29,13 @@ export async function getServerSideProps(context) {
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to fetch order details')
+      toast.error(errorData.message || 'Failed to fetch order details')
     }
 
     const data = await response.json()
 
     if (!data.success) {
-      throw new Error(data.error || 'Invalid order data received')
+      toast.error(data.error || 'Invalid order data received')
     }
 
     return {

@@ -39,7 +39,7 @@ const DeliveryDetails = () => {
       });
   
       if (!res.ok) {
-        throw new Error('Failed to fetch delivery details');
+        toast.error('Failed to fetch delivery details');
       }
   
       const data = await res.json();
@@ -141,7 +141,7 @@ const DeliveryDetails = () => {
       });
   
       if (!updateRes.ok) {
-        throw new Error('Failed to update delivery details');
+        toast.error('Failed to update delivery details');
       }
   
       setIsEditing(false);

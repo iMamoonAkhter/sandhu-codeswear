@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function ProductCard({ product }) {
   return (
     <div className="border border-gray-200 p-4 rounded-lg hover:shadow-md transition-all">
-      <Link href={`/product/${product.category}/${product.slug}`}>
+      {product && <Link href={`/product/${product.category}/${product.slug}`}>
         <div className="relative aspect-square mb-3">
           <Image 
             src={product.img} 
@@ -18,7 +18,8 @@ export default function ProductCard({ product }) {
         {product.availableQty < 10 && (
           <p className="text-xs text-red-500 mt-1">Only {product.availableQty} left!</p>
         )}
-      </Link>
+      </Link>}
     </div>
   );
 }
+

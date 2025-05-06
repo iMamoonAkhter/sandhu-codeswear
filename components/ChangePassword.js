@@ -60,7 +60,7 @@ const ChangePassword = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to change password');
+        toast.error(data.message || 'Failed to change password');
       }
 
       toast.success('Password changed successfully!');

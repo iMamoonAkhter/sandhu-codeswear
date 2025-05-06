@@ -48,7 +48,7 @@ const Navbar = ({
     <div className="flex flex-col md:flex-row justify-center md:justify-start items-center py-2 shadow-md sticky top-0 bg-white z-50">
       {/* Logo */}
       <div className="logo md:mr-5 mr-auto mx-5">
-        <Link href={"/"}>
+        <Link href="/">
           <Image width={100} height={40} src="/logo.png" alt="Logo" />
         </Link>
       </div>
@@ -56,22 +56,22 @@ const Navbar = ({
       {/* Navigation Links */}
       <div className="nav">
         <ul className="flex items-center space-x-6 font-bold md:text-md ">
-          <Link href={"/tshirts"}>
+          <Link href="/tshirts">
             <li className="hover:text-pink-500 transition cursor-pointer">
               Tshirts
             </li>
           </Link>
-          <Link href={"/hoodies"}>
+          <Link href="/hoodies">
             <li className="hover:text-pink-500 transition cursor-pointer">
               Hoodies
             </li>
           </Link>
-          <Link href={"/stickers"}>
+          <Link href="/stickers">
             <li className="hover:text-pink-500 transition cursor-pointer">
               Stickers
             </li>
           </Link>
-          <Link href={"/mugs"}>
+          <Link href="/mugs">
             <li className="hover:text-pink-500 transition cursor-pointer">
               Mugs
             </li>
@@ -117,7 +117,7 @@ const Navbar = ({
           </div>
 
           {!user.value && (
-            <Link href={"/login"} legacyBehavior>
+            <Link href="/login" legacyBehavior>
               <a>
                 <button className="cursor-pointer bg-pink-600 px-2 py-2 rounded-md text-sm text-white mx-2">
                   Login
@@ -157,7 +157,7 @@ const Navbar = ({
         {Object.keys(cart).length === 0 ? (
           <div className="text-center py-10">
             <p className="text-gray-500">Your cart is empty</p>
-            <Link href={"/"}>
+            <Link href="/">
               <button className="mt-4 bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 transition cursor-pointer">
                 Continue Shopping
               </button>
@@ -168,70 +168,73 @@ const Navbar = ({
             <div className="divide-y divide-gray-200">
               {Object.keys(cart).map((itemCode) => {
                 const item = cart[itemCode];
-                return (
-                  <div key={itemCode} className="py-4 flex">
-                    <div className="w-1/3 flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        width={80}
-                        height={80}
-                        className="rounded object-cover"
-                      />
-                    </div>
-                    <div className="w-2/3 pl-4">
-                      <h3 className="font-medium text-gray-900">{item.name}</h3>
-                      <p className="text-sm text-gray-500">Size: {item.size}</p>
-                      <p className="text-sm text-gray-500">
-                        Color: {item.variant}
-                      </p>
-                      <p className="text-pink-500 font-bold mt-1">
-                        ${Number(item.price).toFixed(2)}
-                      </p>
 
-                      {/* Quantity Buttons */}
-                      <div className="flex items-center mt-2">
-  <button
-    onClick={() => removeFromCart(itemCode, 1)}
-    className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
-    title={Number(item.qty) >= Number(item.availableQty) ? "Maximum quantity reached" : ""}
-  >
-    <AiOutlineMinus className="text-sm" />
-  </button>
+                if(itemCode){
+                  return (
+                    <div key={itemCode} className="py-4 flex">
+                      <div className="w-1/3 flex-shrink-0">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          width={80}
+                          height={80}
+                          className="rounded object-cover"
+                        />
+                      </div>
+                      <div className="w-2/3 pl-4">
+                        <h3 className="font-medium text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-500">Size: {item.size}</p>
+                        <p className="text-sm text-gray-500">
+                          Color: {item.variant}
+                        </p>
+                        <p className="text-pink-500 font-bold mt-1">
+                          ${Number(item.price).toFixed(2)}
+                        </p>
   
-  <span className="mx-2 text-gray-700">
-    {Number(item.qty) || 1}
-  </span>
-  
-  <button
-    onClick={() => {
-      const [slug, size, variant] = itemCode.split("~~");
-      addToCart(
-        item.id,
-        slug,
-        1,
-        item.price,
-        item.name,
-        item.category,
-        size,
-        variant,
-        item.image,
-        item.availableQty
-      );
-    }}
-    disabled={Number(item.qty) >= Number(item.availableQty)}
-    className={`p-1 ${
-      Number(item.qty) >= Number(item.availableQty)
-        ? 'opacity-50 cursor-not-allowed text-gray-400'
-        : 'cursor-pointer text-gray-500 hover:text-pink-500'
-    }`}
-  >
-    <AiOutlinePlus className="text-sm" />
-  </button>
-</div>
+                        {/* Quantity Buttons */}
+                        <div className="flex items-center mt-2">
+    <button
+      onClick={() => removeFromCart(itemCode, 1)}
+      className="text-gray-500 hover:text-pink-500 p-1 cursor-pointer"
+      title={Number(item.qty) >= Number(item.availableQty) ? "Maximum quantity reached" : ""}
+    >
+      <AiOutlineMinus className="text-sm" />
+    </button>
+    
+    <span className="mx-2 text-gray-700">
+      {Number(item.qty) || 1}
+    </span>
+    
+    <button
+      onClick={() => {
+        const [slug, size, variant] = itemCode.split("~~");
+        addToCart(
+          item.id,
+          slug,
+          1,
+          item.price,
+          item.name,
+          item.category,
+          size,
+          variant,
+          item.image,
+          item.availableQty
+        );
+      }}
+      disabled={Number(item.qty) >= Number(item.availableQty)}
+      className={`p-1 ${
+        Number(item.qty) >= Number(item.availableQty)
+          ? 'opacity-50 cursor-not-allowed text-gray-400'
+          : 'cursor-pointer text-gray-500 hover:text-pink-500'
+      }`}
+    >
+      <AiOutlinePlus className="text-sm" />
+    </button>
+  </div>
+                      </div>
                     </div>
-                  </div>
-                );
+                  );
+                }
               })}
             </div>
 
@@ -245,7 +248,7 @@ const Navbar = ({
               </div>
 
               {/* Checkout Button */}
-              <Link onClick={checkoutRoute}>
+              <Link href={localStorage.getItem("token") && "/checkout"}>
                 <button className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition mt-4 flex items-center justify-center gap-2 cursor-pointer">
                   <BsFillBagCheckFill className="text-lg" />
                   Checkout

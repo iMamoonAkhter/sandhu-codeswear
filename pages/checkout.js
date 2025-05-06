@@ -147,7 +147,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,e
       });
   
       const paymentIntentData = await paymentIntentRes.json();
-      if (!paymentIntentRes.ok) throw new Error(paymentIntentData.error || 'Payment failed');
+      if (!paymentIntentRes.ok) toast.error(paymentIntentData.error || 'Payment failed');
   
   
       // Step 2: Confirm Payment
@@ -172,7 +172,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,e
   
       if (stripeError) {
         toast.error(stripeError.message);
-        throw new Error(stripeError.message);
+        toast.error(stripeError.message);
       }
   
       if (paymentIntent.status === 'succeeded') {
@@ -202,7 +202,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,e
   
         if (!updateResponse.ok) {
           const errorData = await updateResponse.json();
-          throw new Error(errorData.error || 'Failed to update product quantities');
+          toast.error(errorData.error || 'Failed to update product quantities');
         }
 
         // Post Order with complete product details
@@ -224,7 +224,7 @@ const CheckoutForm = ({ cart, subTotal, clearCart, formValues, setErrorMessage,e
         });
   
         const postOrderData = await postOrderRes.json();
-        if (!postOrderRes.ok) throw new Error(postOrderData.error || 'Order saving failed');
+        if (!postOrderRes.ok) toast.error(postOrderData.error || 'Order saving failed');
         toast.success('Payment successful! Redirecting...', {
 
           onClose: () => {
@@ -335,7 +335,7 @@ const Checkout = ({cart, clearCart, addToCart, removeFromCart, subTotal }) => {
         });
   
         if (!response.ok) {
-          throw new Error('Failed to fetch delivery details');
+          toast.error('Failed to fetch delivery details');
         }
   
         const data = await response.json();
@@ -640,7 +640,7 @@ const Checkout = ({cart, clearCart, addToCart, removeFromCart, subTotal }) => {
           {Object.keys(cart).length === 0 ? (
             <div className="text-center py-10">
               <p className="text-gray-500">Your cart is empty</p>
-              <Link href={'/'}>
+              <Link href='/'>
                 <button className="mt-4 bg-pink-500 text-white px-4 py-2 rounded-md hover:bg-pink-600 transition cursor-pointer">
                   Continue Shopping
                 </button>

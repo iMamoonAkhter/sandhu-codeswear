@@ -58,13 +58,15 @@ const NotFoundPage = () => {
           Popular Categories
         </h3>
         <div className="flex flex-wrap justify-center gap-2">
-          {['tshirts', 'hoodies', 'mugs', 'stickers'].map((category) => (
-            <Link key={category} href={`/products/${category}`} passHref legacyBehavior>
-              <a className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm capitalize transition">
-                {category}
-              </a>
-            </Link>
-          ))}
+        {['tshirts', 'hoodies', 'mugs', 'stickers'].map((category) => (
+    <Link
+      key={category}
+      href={`/products/${category}`}
+      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm capitalize transition"
+    >
+      {category}
+    </Link>
+  ))}
         </div>
       </div>
     </div>

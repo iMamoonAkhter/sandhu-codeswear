@@ -99,7 +99,7 @@ const VerifyToken = () => {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data?.message || 'Failed to resend OTP')
+                toast.error(data?.message || 'Failed to resend OTP')
             }
 
             toast.success('OTP resent successfully!')

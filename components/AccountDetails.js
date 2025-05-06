@@ -51,7 +51,7 @@ const AccountDetails = ({ userInfo }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        toast.error('Failed to update profile');
       }
 
       setIsEditing(false);

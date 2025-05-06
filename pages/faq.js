@@ -55,7 +55,7 @@ const Faq = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h1>
-          <p className="text-lg text-gray-600">{`Can't find what you're looking for?`} <Link href={"/contact"} className="text-pink-500 hover:underline" legacyBehavior><a>Contact our support team</a></Link></p>
+          <p className="text-lg text-gray-600">Cannot find what you are looking for? <Link href="/contact" className="text-pink-500 hover:underline" legacyBehavior><a>Contact our support team</a></Link></p>
         </div>
 
         <div className="space-y-4">

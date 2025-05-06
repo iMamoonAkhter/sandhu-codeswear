@@ -9,6 +9,7 @@ const Mugs = ({ product }) => {
       <section className="text-gray-600 body-font">
         <div className="container px-5 py-24 mx-auto">
           <div className="flex flex-wrap -m-4 justify-center">
+            Your product
             {product.products.map((item) => {
               return <div key={item._id} className="lg:w-1/4 md:w-1/2 p-4 w-full">
                 <Link

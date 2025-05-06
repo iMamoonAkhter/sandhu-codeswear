@@ -251,13 +251,13 @@ export async function getServerSideProps(context) {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to fetch order details')
+        toast.error(errorData.message || 'Failed to fetch order details')
       }
   
       const data = await response.json()
   
       if (!data.success) {
-        throw new Error(data.error || 'Order not found')
+        toast.error(data.error || 'Order not found')
       }
   
       return {

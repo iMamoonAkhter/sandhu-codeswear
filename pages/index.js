@@ -24,7 +24,6 @@ export default function Home({ hoodies, tshirts, mugs, stickers }) {
       </div>
 
       <div className="container mx-auto px-4">
-        {/* Featured Categories */}
         <CategorySection title="Hoodies" products={hoodies} />
         <CategorySection title="T-Shirts" products={tshirts} />
         <CategorySection title="Mugs" products={mugs} />

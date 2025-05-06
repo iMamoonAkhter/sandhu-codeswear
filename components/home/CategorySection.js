@@ -12,7 +12,7 @@ export default function CategorySection({ title, products }) {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold capitalize">{title}</h2>
         <Link 
-          href={`/${products[0].category}`}
+          href={`/${products[0]?.category}`}
           className="flex items-center text-primary hover:underline"
         >
           View all
