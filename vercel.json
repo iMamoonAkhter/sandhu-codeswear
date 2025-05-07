@@ -8,7 +8,7 @@
     ],
     "build": {
       "env": {
-        "NODE_ENV": "production"
+        "MONGODB_URI": "mongodb+srv://imamoonakhter:WnFVSVONpbv9uULB@cluster0.8lrkis4.mongodb.net/sandhucodeswear"
       }
     }
   }
