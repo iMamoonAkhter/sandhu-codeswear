@@ -15,7 +15,7 @@ export const connectDB = (handler) => async (req, res) => {
       
       return res.status(500).json({ 
         error: "Database connection failed",
-        details: process.env.NODE_ENV === 'development' ? error.message : null
+        details: error
       });
     }
   }
