@@ -41,14 +41,14 @@ export async function getServerSideProps() {
   );
 
   try {
-    const [hoodiesRes, tshirtsRes, mugsRes, stickersRes] = await Promise.all(requests);
+    const [hoodies, tshirts, mugs, stickers] = await Promise.all(requests);
     
     return {
       props: {
-        hoodies: hoodiesRes.products,
-        tshirts: tshirtsRes.products,
-        mugs: mugsRes.products,
-        stickers: stickersRes.products
+        hoodies: hoodies.products,
+        tshirts: tshirts.products,
+        mugs: mugs.products,
+        stickers: stickers.products
       }
     };
   } catch (error) {
