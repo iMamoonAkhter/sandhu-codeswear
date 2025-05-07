@@ -1,3 +1,4 @@
+
 // middleware/mongoose.js
 import mongoose from "mongoose";
 
@@ -6,10 +7,7 @@ let isConnected = false; // Avoid multiple connections in development
 export const connectDB = (handler) => async (req, res) => {
   if (!isConnected) {
     try {
-      await mongoose.connect(process.env.MONGODB_URI,  {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
+      await mongoose.connect(process.env.MONGODB_URI);
       isConnected = true;
     } catch (error) {
       
