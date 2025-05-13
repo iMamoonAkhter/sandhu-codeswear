@@ -7,7 +7,7 @@ let isConnected = false; // Avoid multiple connections in development
 export const connectDB = (handler) => async (req, res) => {
   if (!isConnected) {
     try {
-      await mongoose.connect(process.env.MONGODB_URI);
+      await mongoose.connect(process.env.MONGODB_URI).then(() => {console.log("Mongo DB connected")});
       isConnected = true;
     } catch (error) {
       

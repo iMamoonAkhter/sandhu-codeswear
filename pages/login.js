@@ -27,14 +27,28 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       })
-
+  
+      // First check if the response is OK (status 200-299)
+      if (!response.ok) {
+        // If not OK, try to get error message from response
+        let errorMessage = 'Invalid credentials'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          // If we can't parse JSON, use status text
+          errorMessage = response.statusText || errorMessage
+        }
+        toast.error(errorMessage)
+        return
+      }
+  
+      // If response is OK, parse JSON
       const data = await response.json()
       
       if (data.success) {
         toast.success("Login Successful")
-        // Store token in localStorage
         localStorage.setItem('token', data.token)
-        // Force a full page reload to initialize app state
         if(localStorage.getItem('token')){
           router.push('/')
         }
@@ -42,7 +56,7 @@ const Login = () => {
         toast.error(data.message)
       }
     } catch (error) {
-      toast.error("An error occurred during login")
+      toast.error(error.message || "An error occurred during login")
       console.error("Login error:", error)
     } finally {
       setEmail('')
