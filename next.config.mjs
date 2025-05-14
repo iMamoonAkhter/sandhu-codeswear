@@ -12,6 +12,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "static.vecteezy.com",
         pathname: "/system/resources/**",
+      },
+      {
+        protocol: "https",
+        hostname: "maps.googleapis.com",
+        pathname: "/**",
       }
     ],
   },
